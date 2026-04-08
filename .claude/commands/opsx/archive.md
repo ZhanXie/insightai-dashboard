@@ -1,6 +1,10 @@
-description = "Archive a completed change in the experimental workflow"
+---
+name: "OPSX: Archive"
+description: Archive a completed change in the experimental workflow
+category: Workflow
+tags: [workflow, archive, experimental]
+---
 
-prompt = """
 Archive a completed change in the experimental workflow.
 
 **Input**: Optionally specify a change name after `/opsx:archive` (e.g., `/opsx:archive add-auth`). If omitted, check if it can be inferred from conversation context. If vague or ambiguous you MUST prompt for available changes.
@@ -151,4 +155,3 @@ Target archive directory already exists.
 - Show clear summary of what happened
 - If sync is requested, use the Skill tool to invoke `openspec-sync-specs` (agent-driven)
 - If delta specs exist, always run the sync assessment and show the combined summary before prompting
-"""
