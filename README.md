@@ -1,36 +1,263 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI Dashboard / AI 智能仪表盘
 
-## Getting Started
+> A full-stack AI dashboard with RAG (Retrieval-Augmented Generation) knowledge base chat and data visualization.
+> 一个全栈 AI 仪表盘，具备 RAG（检索增强生成）知识库聊天和数据可视化功能。
 
-First, run the development server:
+---
+
+## Tech Stack / 技术栈
+
+| Layer | Technology |
+|-------|-----------|
+| Framework | Next.js 16 (App Router) |
+| Language | TypeScript 5 |
+| Styling | Tailwind CSS 4 |
+| Auth | Auth.js v5 (next-auth@5) |
+| Database | Supabase PostgreSQL + Prisma ORM 6 + pgvector |
+| AI | Vercel AI SDK 4 + Tencent Hunyuan (OpenAI-compatible API) |
+| Charts | Recharts 3 |
+| Deployment | Vercel Hobby (free) |
+
+## Features / 功能特性
+
+- **User Authentication** — Register, login, session management with Auth.js v5
+- **Document Upload** — Upload PDF/TXT/MD/DOCX files (up to 50MB), auto text extraction, chunking, and vector embedding
+- **RAG Chat** — AI chat powered by vector similarity search, streaming responses via Server-Sent Events
+- **Data Visualization** — Dashboard with Recharts: document trends, chat activity, format distribution
+- **User Data Isolation** — All queries scoped by user ID, strict data separation
+- **Zero-Cost Deployment** — Vercel Hobby + Supabase free tier
+
+---
+
+## Quick Start / 快速开始
+
+### Prerequisites / 前置要求
+
+- Node.js 18+
+- PostgreSQL database (recommended: [Supabase](https://supabase.com/))
+- Tencent Hunyuan API Key ([Get one here](https://console.cloud.tencent.com/hunyuan/api-key))
+
+### 1. Clone & Install / 克隆并安装
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone <your-repo-url>
+cd insightai-dashboard
+npm run setup
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+`npm run setup` runs `npm install` + `prisma generate` + `prisma db push` in one command.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+### 2. Configure Environment / 配置环境变量
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.example .env.local
+```
 
-## Learn More
+Edit `.env.local` with your credentials:
 
-To learn more about Next.js, take a look at the following resources:
+```env
+# Supabase PostgreSQL connection string
+DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_ID.supabase.co:5432/postgres?schema=public"
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# Tencent Hunyuan AI API Key
+HUNYUAN_API_KEY="YOUR_HUNYUAN_API_KEY"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# Auth.js Secret (generate with: openssl rand -base64 32)
+AUTH_SECRET="your-random-secret-here"
 
-## Deploy on Vercel
+# Application URL
+NEXTAUTH_URL="http://localhost:3000"
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+### 3. Enable pgvector / 启用 pgvector 扩展
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+In your Supabase dashboard → **Database** → **Extensions**, enable the `pgvector` extension.
+
+Or via SQL:
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+### 4. Push Database Schema / 推送数据库 Schema
+
+```bash
+npm run db:push
+```
+
+### 5. Start Development Server / 启动开发服务器
+
+```bash
+npm run dev          # standard dev server
+npm run dev:turbo    # faster with Turbopack
+```
+
+Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+---
+
+## Available Scripts / 可用脚本
+
+### Development / 开发
+
+| Command | Description |
+|---------|------------|
+| `npm run dev` | Start development server |
+| `npm run dev:turbo` | Start development server with Turbopack (faster) |
+| `npm run build` | Production build |
+| `npm run start` | Start production server |
+
+### Code Quality / 代码质量
+
+| Command | Description |
+|---------|------------|
+| `npm run lint` | Run ESLint |
+| `npm run lint:fix` | Run ESLint and auto-fix |
+| `npm run typecheck` | TypeScript type check (no emit) |
+
+### Database / 数据库
+
+| Command | Description |
+|---------|------------|
+| `npm run db:generate` | Generate Prisma Client |
+| `npm run db:push` | Push schema to database (no migration history) |
+| `npm run db:migrate` | Create and apply a migration (dev) |
+| `npm run db:studio` | Open Prisma Studio (visual DB browser) |
+| `npm run db:reset` | Reset database (⚠️ destroys all data) |
+| `npm run setup` | Install + generate + push (one-time setup) |
+
+---
+
+## Project Structure / 项目结构
+
+```
+insightai-dashboard/
+├── app/                              # Next.js App Router
+│   ├── api/                          # API Route Handlers
+│   │   ├── auth/[...nextauth]/       # Auth.js v5 authentication
+│   │   ├── chat/                     # RAG chat + session management
+│   │   ├── documents/                # Document CRUD + upload
+│   │   └── register/                 # User registration
+│   ├── actions/                      # Server Actions
+│   ├── login/                        # Login page
+│   ├── register/                     # Registration page
+│   └── dashboard/                    # Protected dashboard pages
+│       ├── chat/                     # AI chat interface
+│       ├── documents/                # Document management
+│       └── analytics/                # Data visualization
+├── components/                       # Reusable React components
+│   ├── FileUpload.tsx                # Drag & drop file uploader
+│   ├── ChatSidebar.tsx               # Chat session sidebar
+│   ├── Charts.tsx                    # Recharts chart components
+│   ├── StatCard.tsx                  # Dashboard stat cards
+│   ├── LogoutButton.tsx              # Logout button
+│   └── DeleteDocumentButton.tsx      # Document delete button
+├── lib/                              # Utility libraries
+│   ├── prisma.ts                     # Prisma client singleton
+│   ├── ai.ts                         # AI model configuration
+│   ├── document-processor.ts         # Text extraction & chunking
+│   └── vector-search.ts              # pgvector similarity search
+├── prisma/
+│   └── schema.prisma                 # Database schema (5 models + pgvector)
+├── types/
+│   └── next-auth.d.ts                # Auth.js type extensions
+├── middleware.ts                     # Route protection middleware
+├── .env.example                      # Environment variables template
+└── .env.local                        # Local env (gitignored)
+```
+
+---
+
+## Architecture / 架构设计
+
+### RAG Flow / RAG 流程
+
+```
+Upload Document
+    │
+    ▼
+┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  Extract Text   │────▶│  Chunk Text       │────▶│  Generate Embed- │
+│  (pdf-parse,    │     │  (500-1000 tokens │     │  dings (Hunyuan) │
+│   mammoth)      │     │   + 100 overlap)  │     │                  │
+└─────────────────┘     └──────────────────┘     └─────────┬────────┘
+                                                           │
+                                                           ▼
+                                                  ┌──────────────────┐
+                                                  │  Store in Post-  │
+                                                  │  gres (pgvector) │
+                                                  └──────────────────┘
+
+Chat Query
+    │
+    ▼
+┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│  Generate Query │────▶│  Vector Similar-  │────▶│  Build Augmented │
+│  Embedding      │     │  ity Search (Top-5│     │  Prompt + Stream │
+│                 │     │   user-scoped)    │     │  AI Response     │
+└─────────────────┘     └──────────────────┘     └──────────────────┘
+```
+
+### Data Models / 数据模型
+
+```
+User ──┬── Document ── Chunk (with pgvector embedding)
+       │
+       └── ChatSession ── Message (user/assistant)
+```
+
+### API Route Handler vs Server Action
+
+| Scenario | Choice | Reason |
+|----------|--------|--------|
+| Streaming AI response | **API Handler** | Only API routes support SSE streaming |
+| Form submission (login/register) | **Server Action** | Progressive enhancement, auto-serialization |
+| Server-side data fetching | **Server Action** | Best performance, no HTTP round-trip |
+| RESTful CRUD operations | **API Handler** | Clear HTTP semantics |
+| External/third-party calls | **API Handler** | Only externally accessible endpoints |
+
+---
+
+## Deployment / 部署
+
+### Vercel + Supabase
+
+1. Push your code to GitHub
+2. Import project in [Vercel](https://vercel.com/new)
+3. Set environment variables:
+   - `DATABASE_URL`
+   - `HUNYUAN_API_KEY`
+   - `AUTH_SECRET` (generate with `openssl rand -base64 32`)
+4. Deploy!
+
+The production database URL should point to your Supabase project.
+
+---
+
+## Troubleshooting / 常见问题
+
+### Build fails with pgvector errors
+Make sure `pgvector` extension is enabled in your PostgreSQL database:
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+### Auth.js session issues
+- Ensure `AUTH_SECRET` is set in `.env.local`
+- Regenerate the secret: `openssl rand -base64 32`
+- Clear browser cookies and try again
+
+### Document upload fails
+- Check file size is under 50MB
+- Verify supported formats: PDF, TXT, MD, DOCX
+- Check Vercel serverless function timeout (Hobby tier: 10s limit)
+
+### AI chat not returning results
+- Verify `HUNYUAN_API_KEY` is correct
+- Check that documents have status "ready"
+- Review browser console for streaming errors
+
+---
+
+## License / 许可证
+
+MIT
