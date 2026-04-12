@@ -5,7 +5,7 @@ import type { NextRequest } from "next/server";
 const protectedRoutes = ["/", "/dashboard"];
 const publicRoutes = ["/login", "/register"];
 
-export async function middleware(request: NextRequest) {
+export default async function proxy(request: NextRequest) {
   const session = await auth();
   const pathname = request.nextUrl.pathname;
 

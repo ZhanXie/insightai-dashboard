@@ -1,8 +1,8 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useRef, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import ChatSidebar from "@/components/ChatSidebar";
 import {
   getChatSessions,
@@ -25,18 +25,41 @@ interface Message {
 }
 
 interface ChatPageProps {
-  sessions: Session[];
-  messages: Message[];
-  currentSessionId: string | null;
+  sessions?: Session[];
+  messages?: Message[];
+  currentSessionId?: string;
 }
 
 export default function ChatPage({
-  sessions,
-  messages,
-  currentSessionId,
+  sessions: initialSessions = [],
+  messages: initialMessages = [],
+  currentSessionId: initialSessionId,
 }: ChatPageProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [sessions, setSessions] = useState<Session[]>(initialSessions);
+  const [messages, setMessages] = useState<Message[]>(initialMessages);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(initialSessionId || null);
+  const [loading, setLoading] = useState(initialSessions.length === 0 && initialMessages.length === 0);
+
+  useEffect(() => {
+    const loadData = async () => {
+      const sessionId = searchParams.get("sessionId");
+      setCurrentSessionId(sessionId);
+
+      const [sessionsData, messagesData] = await Promise.all([
+        getChatSessions(),
+        sessionId ? getChatSessionMessages(sessionId) : Promise.resolve([]),
+      ]);
+
+      setSessions(sessionsData || []);
+      setMessages(messagesData || []);
+      setLoading(false);
+    };
+
+    loadData();
+  }, [searchParams]);
 
   const { messages: chatMessages, input, handleInputChange, handleSubmit, isLoading, error } =
     useChat({
@@ -60,8 +83,16 @@ export default function ChatPage({
 
   const handleNewChat = async () => {
     const newSession = await createChatSession();
-    router.push(`/dashboard/chat/${newSession.id}`);
+    router.push(`/dashboard/chat?sessionId=${newSession.id}`);
   };
+
+  if (loading) {
+    return (
+      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
+        <div className="text-gray-500">Loading...</div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">

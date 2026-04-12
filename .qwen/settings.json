@@ -18,7 +18,9 @@
       "Bash(docker volume *)",
       "Bash(sleep *)",
       "Bash(docker exec *)",
-      "Bash(curl *)"
+      "Bash(curl *)",
+      "Bash(lsof *)",
+      "WebFetch(nextjs.org)"
     ]
   },
   "$version": 3

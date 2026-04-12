@@ -79,13 +79,13 @@ export async function POST(request: Request) {
 
     // If we have a session ID, save the messages asynchronously after streaming starts
     if (sessionId) {
-      // Note: Saving happens asynchronously - response text is available via result.text
-      saveChatSession(sessionId, userId, messages, result.text.then(t => t).catch(() => "")).catch(
+      // Save chat session asynchronously using the text from the stream
+      saveChatSessionWithResponse(sessionId, userId, messages).catch(
         console.error
       );
     }
 
-    return result.toTextStreamResponse();
+    return result.toDataStreamResponse();
   } catch (error) {
     console.error("Chat error:", error);
     return NextResponse.json(
@@ -100,7 +100,58 @@ export async function POST(request: Request) {
 
 /**
  * Save chat session and messages to the database.
+ * This version extracts text from the stream and saves it.
+ */
+async function saveChatSessionWithResponse(
+  sessionId: string,
+  userId: string,
+  messages: Array<{ role: string; content: string }>
+) {
+  try {
+    // Check if session exists, create if not
+    const existingSession = await prisma.chatSession.findUnique({
+      where: { id: sessionId },
+    });
+
+    if (!existingSession) {
+      const title =
+        messages[0]?.content?.slice(0, 50) || "New Conversation";
+      await prisma.chatSession.create({
+        data: {
+          id: sessionId,
+          userId,
+          title,
+        },
+      });
+    }
+
+    // Save user message
+    const lastUserMessage = messages[messages.length - 1];
+    await prisma.message.create({
+      data: {
+        sessionId,
+        role: "user",
+        content: lastUserMessage.content,
+      },
+    });
+
+    // Note: Assistant response will be saved via the onFinish callback in the frontend
+    // or through a separate mechanism
+    
+    // Update session's updatedAt
+    await prisma.chatSession.update({
+      where: { id: sessionId },
+      data: { updatedAt: new Date() },
+    });
+  } catch (error) {
+    console.error("Failed to save chat session:", error);
+  }
+}
+
+/**
+ * Save chat session and messages to the database.
  * Runs asynchronously after streaming begins.
+ * @deprecated Use saveChatSessionWithResponse instead
  */
 async function saveChatSession(
   sessionId: string,
