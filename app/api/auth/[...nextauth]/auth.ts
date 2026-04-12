@@ -2,7 +2,6 @@ import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { prisma } from "@/lib/prisma";
-import bcrypt from "bcryptjs";
 
 export const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma),
@@ -29,10 +28,8 @@ export const authConfig: NextAuthConfig = {
           return null;
         }
 
-        const isCorrectPassword = await bcrypt.compare(
-          password,
-          user.passwordHash
-        );
+        // Plain text password comparison
+        const isCorrectPassword = password === user.passwordHash;
 
         if (!isCorrectPassword) {
           return null;

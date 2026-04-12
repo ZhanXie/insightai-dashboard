@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { auth } from "@/app/api/auth/[...nextauth]/auth.edge";
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
