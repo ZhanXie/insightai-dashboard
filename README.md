@@ -102,16 +102,9 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | Command | Description |
 |---------|------------|
 | `npm run dev` | Start development server |
-| `npm run dev:turbo` | Start development server with Turbopack (faster) |
 | `npm run build` | Production build |
 | `npm run start` | Start production server |
-
-### Code Quality / 代码质量
-
-| Command | Description |
-|---------|------------|
-| `npm run lint` | Run ESLint |
-| `npm run lint:fix` | Run ESLint and auto-fix |
+| `npm run lint` | Run ESLint and auto-fix |
 | `npm run typecheck` | TypeScript type check (no emit) |
 
 ### Database / 数据库
@@ -119,11 +112,19 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 | Command | Description |
 |---------|------------|
 | `npm run db:generate` | Generate Prisma Client |
-| `npm run db:push` | Push schema to database (no migration history) |
-| `npm run db:migrate` | Create and apply a migration (dev) |
+| `npm run db:push` | Push schema to database (development) |
+| `npm run db:migrate` | Deploy migrations to production |
+| `npm run db:deploy` | One-click deploy: generate + migrate |
 | `npm run db:studio` | Open Prisma Studio (visual DB browser) |
-| `npm run db:reset` | Reset database (⚠️ destroys all data) |
 | `npm run setup` | Install + generate + push (one-time setup) |
+
+### Production Deploy / 生产部署
+
+```bash
+npm run build
+npm run db:deploy
+npm start
+```
 
 ---
 
@@ -224,12 +225,32 @@ User ──┬── Document ── Chunk (with pgvector embedding)
 1. Push your code to GitHub
 2. Import project in [Vercel](https://vercel.com/new)
 3. Set environment variables:
-   - `DATABASE_URL`
+   - `DATABASE_URL` (Supabase connection string)
    - `HUNYUAN_API_KEY`
    - `AUTH_SECRET` (generate with `openssl rand -base64 32`)
 4. Deploy!
 
-The production database URL should point to your Supabase project.
+### Production Database Migration
+
+Deploy database to production:
+
+```bash
+npm run db:deploy
+# Equivalent to: npx prisma generate && npx prisma migrate deploy
+```
+
+⚠️ **Important**: 
+- Use `db:deploy` for new production databases
+- Use `db:push` only for local development
+
+### Docker Deployment (Optional)
+
+```bash
+# Build and run with docker-compose
+docker-compose -f docker-compose.yml up -d
+```
+
+Environment variables can be set in `.env` file or directly in docker-compose.
 
 ---
 
