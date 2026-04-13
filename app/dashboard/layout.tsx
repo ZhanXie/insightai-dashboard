@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
@@ -9,11 +9,11 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session) {
+  const guard = await requireAuth();
+  if ("response" in guard) {
     redirect("/login");
   }
+  const session = guard.session;
 
   return (
     <div className="min-h-screen bg-gray-50">

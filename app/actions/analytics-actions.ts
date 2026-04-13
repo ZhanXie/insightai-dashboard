@@ -1,11 +1,11 @@
 "use server";
 
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
 
 export async function getDashboardStats() {
-  const session = await auth();
-  if (!session?.user?.id) {
+  const guard = await requireAuth();
+  if ("response" in guard) {
     return {
       totalDocuments: 0,
       totalChunks: 0,
@@ -13,8 +13,7 @@ export async function getDashboardStats() {
       totalMessages: 0,
     };
   }
-
-  const userId = session.user.id;
+  const userId = guard.userId;
 
   const [totalDocuments, totalChunks, totalSessions, totalMessages] =
     await Promise.all([
@@ -32,11 +31,12 @@ export async function getDashboardStats() {
 }
 
 export async function getDocumentsOverTime() {
-  const session = await auth();
-  if (!session?.user?.id) return [];
+  const guard = await requireAuth();
+  if ("response" in guard) return [];
+  const userId = guard.userId;
 
   const documents = await prisma.document.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     select: { createdAt: true },
     orderBy: { createdAt: "asc" },
   });
@@ -54,12 +54,13 @@ export async function getDocumentsOverTime() {
 }
 
 export async function getChatActivity() {
-  const session = await auth();
-  if (!session?.user?.id) return [];
+  const guard = await requireAuth();
+  if ("response" in guard) return [];
+  const userId = guard.userId;
 
   const messages = await prisma.message.findMany({
     where: {
-      session: { userId: session.user.id },
+      session: { userId },
       createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
     },
     select: { createdAt: true },
@@ -79,11 +80,12 @@ export async function getChatActivity() {
 }
 
 export async function getDocumentFormatDistribution() {
-  const session = await auth();
-  if (!session?.user?.id) return [];
+  const guard = await requireAuth();
+  if ("response" in guard) return [];
+  const userId = guard.userId;
 
   const documents = await prisma.document.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     select: { mimeType: true },
   });
 

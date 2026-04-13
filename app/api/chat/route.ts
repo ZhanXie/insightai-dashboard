@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 import { chatModel, embeddingModel } from "@/lib/ai";
 import { searchRelevantChunks } from "@/lib/vector-search";
@@ -7,11 +7,9 @@ import { streamText } from "ai";
 import { prisma } from "@/lib/prisma";
 
 export async function POST(request: Request) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAuth();
+  if ("response" in guard) return guard.response;
+  const userId = guard.userId;
 
   try {
     const { messages, sessionId } = await request.json();
@@ -23,7 +21,6 @@ export async function POST(request: Request) {
       );
     }
 
-    const userId = session.user.id;
     const lastUserMessage = messages[messages.length - 1].content;
 
     // Check if user has any ready documents
@@ -75,14 +72,30 @@ export async function POST(request: Request) {
     const result = streamText({
       model: chatModel,
       messages: aiMessages,
+      onFinish: async (completion) => {
+        // Save assistant response to database after streaming completes
+        try {
+          await prisma.message.create({
+            data: {
+              sessionId,
+              role: "assistant",
+              content: completion.text,
+            },
+          });
+          // Update session's updatedAt
+          await prisma.chatSession.update({
+            where: { id: sessionId },
+            data: { updatedAt: new Date() },
+          });
+        } catch (error) {
+          console.error("Failed to save assistant response:", error);
+        }
+      },
     });
 
-    // If we have a session ID, save the messages asynchronously after streaming starts
+    // If we have a session ID, save the user message asynchronously after streaming starts
     if (sessionId) {
-      // Save chat session asynchronously using the text from the stream
-      saveChatSessionWithResponse(sessionId, userId, messages).catch(
-        console.error
-      );
+      saveUserMessage(sessionId, userId, messages).catch(console.error);
     }
 
     return result.toDataStreamResponse();
@@ -99,10 +112,10 @@ export async function POST(request: Request) {
 }
 
 /**
- * Save chat session and messages to the database.
- * This version extracts text from the stream and saves it.
+ * Save user message and create chat session if needed.
+ * Runs asynchronously after streaming begins.
  */
-async function saveChatSessionWithResponse(
+async function saveUserMessage(
   sessionId: string,
   userId: string,
   messages: Array<{ role: string; content: string }>
@@ -134,75 +147,7 @@ async function saveChatSessionWithResponse(
         content: lastUserMessage.content,
       },
     });
-
-    // Note: Assistant response will be saved via the onFinish callback in the frontend
-    // or through a separate mechanism
-    
-    // Update session's updatedAt
-    await prisma.chatSession.update({
-      where: { id: sessionId },
-      data: { updatedAt: new Date() },
-    });
   } catch (error) {
-    console.error("Failed to save chat session:", error);
-  }
-}
-
-/**
- * Save chat session and messages to the database.
- * Runs asynchronously after streaming begins.
- * @deprecated Use saveChatSessionWithResponse instead
- */
-async function saveChatSession(
-  sessionId: string,
-  userId: string,
-  messages: Array<{ role: string; content: string }>,
-  assistantResponse: Promise<string>
-) {
-  try {
-    // Check if session exists, create if not
-    const existingSession = await prisma.chatSession.findUnique({
-      where: { id: sessionId },
-    });
-
-    if (!existingSession) {
-      const title =
-        messages[0]?.content?.slice(0, 50) || "New Conversation";
-      await prisma.chatSession.create({
-        data: {
-          id: sessionId,
-          userId,
-          title,
-        },
-      });
-    }
-
-    // Save user message
-    const lastUserMessage = messages[messages.length - 1];
-    await prisma.message.create({
-      data: {
-        sessionId,
-        role: "user",
-        content: lastUserMessage.content,
-      },
-    });
-
-    // Save assistant response
-    const responseText = await assistantResponse;
-    await prisma.message.create({
-      data: {
-        sessionId,
-        role: "assistant",
-        content: responseText,
-      },
-    });
-
-    // Update session's updatedAt
-    await prisma.chatSession.update({
-      where: { id: sessionId },
-      data: { updatedAt: new Date() },
-    });
-  } catch (error) {
-    console.error("Failed to save chat session:", error);
+    console.error("Failed to save user message:", error);
   }
 }

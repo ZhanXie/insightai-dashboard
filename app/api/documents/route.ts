@@ -1,14 +1,12 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
 // GET /api/documents - List user's documents with pagination
 export async function GET(request: Request) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAuth();
+  if ("response" in guard) return guard.response;
+  const userId = guard.userId;
 
   const url = new URL(request.url);
   const page = parseInt(url.searchParams.get("page") || "1", 10);
@@ -17,7 +15,7 @@ export async function GET(request: Request) {
 
   const [documents, total] = await Promise.all([
     prisma.document.findMany({
-      where: { userId: session.user.id },
+      where: { userId },
       orderBy: { createdAt: "desc" },
       skip,
       take: limit,
@@ -32,7 +30,7 @@ export async function GET(request: Request) {
       },
     }),
     prisma.document.count({
-      where: { userId: session.user.id },
+      where: { userId },
     }),
   ]);
 

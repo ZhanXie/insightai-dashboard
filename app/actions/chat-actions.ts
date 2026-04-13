@@ -1,15 +1,16 @@
 "use server";
 
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
 
 export async function getChatSessions() {
-  const session = await auth();
-  if (!session?.user?.id) return [];
+  const guard = await requireAuth();
+  if ("response" in guard) return [];
+  const userId = guard.userId;
 
   return prisma.chatSession.findMany({
-    where: { userId: session.user.id },
+    where: { userId },
     orderBy: { updatedAt: "desc" },
     select: {
       id: true,
@@ -21,12 +22,13 @@ export async function getChatSessions() {
 }
 
 export async function getChatSessionMessages(sessionId: string) {
-  const session = await auth();
-  if (!session?.user?.id) return [];
+  const guard = await requireAuth();
+  if ("response" in guard) return [];
+  const userId = guard.userId;
 
   // Verify ownership
   const chatSession = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId: session.user.id },
+    where: { id: sessionId, userId },
   });
 
   if (!chatSession) return [];
@@ -44,12 +46,13 @@ export async function getChatSessionMessages(sessionId: string) {
 }
 
 export async function createChatSession() {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  const guard = await requireAuth();
+  if ("response" in guard) throw new Error("Unauthorized");
+  const userId = guard.userId;
 
   const chatSession = await prisma.chatSession.create({
     data: {
-      userId: session.user.id,
+      userId,
       title: "New Conversation",
     },
   });
@@ -59,11 +62,12 @@ export async function createChatSession() {
 }
 
 export async function deleteChatSession(sessionId: string) {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Unauthorized");
+  const guard = await requireAuth();
+  if ("response" in guard) throw new Error("Unauthorized");
+  const userId = guard.userId;
 
   const chatSession = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId: session.user.id },
+    where: { id: sessionId, userId },
   });
 
   if (!chatSession) throw new Error("Chat session not found");

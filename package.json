@@ -13,7 +13,8 @@
     "db:migrate": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:deploy": "npm run db:generate && npm run db:migrate",
-    "setup": "npm install && npm run db:generate && npm run db:push"
+    "setup": "npm install && npm run db:generate && npm run db:push",
+    "dev:up": "docker compose up -d && sleep 3 && npm run db:generate && npm run db:push && next dev"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.3.24",

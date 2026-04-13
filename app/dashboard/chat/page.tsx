@@ -31,18 +31,20 @@ interface ChatPageProps {
 }
 
 export default function ChatPage({
-  sessions: initialSessions = [],
-  messages: initialMessages = [],
-  currentSessionId: initialSessionId,
+  sessions: serverSessions = [],
+  messages: serverMessages = [],
+  currentSessionId: serverSessionId,
 }: ChatPageProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [sessions, setSessions] = useState<Session[]>(initialSessions);
-  const [messages, setMessages] = useState<Message[]>(initialMessages);
-  const [currentSessionId, setCurrentSessionId] = useState<string | null>(initialSessionId || null);
-  const [loading, setLoading] = useState(initialSessions.length === 0 && initialMessages.length === 0);
 
+  // Use server-provided data as initial state; only re-fetch when session changes
+  const [sessions, setSessions] = useState<Session[]>(serverSessions);
+  const [messages, setMessages] = useState<Message[]>(serverMessages);
+  const [currentSessionId, setCurrentSessionId] = useState<string | null>(serverSessionId || null);
+
+  // Re-fetch sessions and messages when URL search params change (e.g., user navigates to a different session)
   useEffect(() => {
     const loadData = async () => {
       const sessionId = searchParams.get("sessionId");
@@ -55,11 +57,14 @@ export default function ChatPage({
 
       setSessions(sessionsData || []);
       setMessages(messagesData || []);
-      setLoading(false);
     };
 
-    loadData();
-  }, [searchParams]);
+    // Only re-fetch if the server-provided data doesn't match the current session
+    const sessionId = searchParams.get("sessionId");
+    if (sessionId && sessionId !== serverSessionId) {
+      loadData();
+    }
+  }, [searchParams, serverSessionId, serverSessions, serverMessages]);
 
   const { messages: chatMessages, input, handleInputChange, handleSubmit, isLoading, error } =
     useChat({
@@ -85,14 +90,6 @@ export default function ChatPage({
     const newSession = await createChatSession();
     router.push(`/dashboard/chat?sessionId=${newSession.id}`);
   };
-
-  if (loading) {
-    return (
-      <div className="flex h-[calc(100vh-4rem)] items-center justify-center">
-        <div className="text-gray-500">Loading...</div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex h-[calc(100vh-4rem)]">

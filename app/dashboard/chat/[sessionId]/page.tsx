@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { notFound } from "next/navigation";
 import { getChatSessions, getChatSessionMessages } from "@/app/actions/chat-actions";
 import ChatPage from "../page";
@@ -8,8 +8,8 @@ export default async function ChatSessionPage({
 }: {
   params: Promise<{ sessionId: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user?.id) return null;
+  const guard = await requireAuth();
+  if ("response" in guard) return null;
 
   const { sessionId } = await params;
 
