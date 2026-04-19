@@ -126,7 +126,7 @@ export default function ChatClient({
   };
 
   return (
-    <div className="flex h-[calc(100vh-4rem)]">
+    <div className="flex h-full">
       {/* Sidebar */}
       <ChatSidebar
         sessions={sessions}

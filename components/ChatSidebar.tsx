@@ -41,7 +41,12 @@ export default function ChatSidebar({
     e.stopPropagation();
     if (!confirm("Delete this chat session?")) return;
     await deleteChatSession(sessionId);
-    router.refresh();
+    // If deleting the current session, navigate to the base chat page
+    if (sessionId === currentSessionId) {
+      router.push("/dashboard/chat");
+    } else {
+      router.refresh();
+    }
   };
 
   const handleEditClick = (sessionId: string, title: string, e: React.MouseEvent) => {
