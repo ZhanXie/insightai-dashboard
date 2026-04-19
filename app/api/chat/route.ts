@@ -5,6 +5,7 @@ import { searchRelevantChunks } from "@/lib/vector-search";
 import { embed } from "ai";
 import { streamText } from "ai";
 import { prisma } from "@/lib/prisma";
+import { nanoid } from "nanoid";
 
 export async function POST(request: Request) {
   const guard = await requireAuth();
@@ -12,7 +13,7 @@ export async function POST(request: Request) {
   const userId = guard.userId;
 
   try {
-    const { messages, sessionId } = await request.json();
+    const { messages, sessionId: requestSessionId } = await request.json();
 
     if (!messages || messages.length === 0) {
       return NextResponse.json(
@@ -22,6 +23,49 @@ export async function POST(request: Request) {
     }
 
     const lastUserMessage = messages[messages.length - 1].content;
+
+    // Create or verify session
+    let sessionId = requestSessionId;
+    let isNewSession = false;
+
+    if (!sessionId) {
+      // Create a new session
+      const title = lastUserMessage.slice(0, 50) || "New Conversation";
+      const newSession = await prisma.chatSession.create({
+        data: {
+          userId,
+          title,
+        },
+      });
+      sessionId = newSession.id;
+      isNewSession = true;
+    } else {
+      // Verify session exists and belongs to user
+      const existingSession = await prisma.chatSession.findFirst({
+        where: { id: sessionId, userId },
+      });
+      if (!existingSession) {
+        // Session doesn't exist or doesn't belong to user, create new one
+        const title = lastUserMessage.slice(0, 50) || "New Conversation";
+        const newSession = await prisma.chatSession.create({
+          data: {
+            userId,
+            title,
+          },
+        });
+        sessionId = newSession.id;
+        isNewSession = true;
+      }
+    }
+
+    // Save user message
+    await prisma.message.create({
+      data: {
+        sessionId,
+        role: "user",
+        content: lastUserMessage,
+      },
+    });
 
     // Check if user has any ready documents
     const docCount = await prisma.document.count({
@@ -47,7 +91,7 @@ export async function POST(request: Request) {
     if (contextChunks.length > 0) {
       const contextText = contextChunks
         .map(
-          (chunk, i) =>
+          (chunk) =>
             `[Document: ${chunk.documentFilename}, Chunk ${chunk.position + 1}]\n${chunk.content}`
         )
         .join("\n\n---\n\n");
@@ -82,10 +126,14 @@ export async function POST(request: Request) {
               content: completion.text,
             },
           });
-          // Update session's updatedAt
+          // Update session's updatedAt and potentially title
           await prisma.chatSession.update({
             where: { id: sessionId },
-            data: { updatedAt: new Date() },
+            data: { 
+              updatedAt: new Date(),
+              // Update title based on first user message if it was a new session
+              ...(isNewSession && { title: lastUserMessage.slice(0, 50) || "New Conversation" }),
+            },
           });
         } catch (error) {
           console.error("Failed to save assistant response:", error);
@@ -93,12 +141,15 @@ export async function POST(request: Request) {
       },
     });
 
-    // If we have a session ID, save the user message asynchronously after streaming starts
-    if (sessionId) {
-      saveUserMessage(sessionId, userId, messages).catch(console.error);
+    // Return response with session ID header for new sessions
+    const response = result.toDataStreamResponse();
+    
+    // Add custom header to inform client of new session ID
+    if (isNewSession) {
+      response.headers.set("X-Session-Id", sessionId);
     }
-
-    return result.toDataStreamResponse();
+    
+    return response;
   } catch (error) {
     console.error("Chat error:", error);
     return NextResponse.json(
@@ -108,46 +159,5 @@ export async function POST(request: Request) {
       },
       { status: 500 }
     );
-  }
-}
-
-/**
- * Save user message and create chat session if needed.
- * Runs asynchronously after streaming begins.
- */
-async function saveUserMessage(
-  sessionId: string,
-  userId: string,
-  messages: Array<{ role: string; content: string }>
-) {
-  try {
-    // Check if session exists, create if not
-    const existingSession = await prisma.chatSession.findUnique({
-      where: { id: sessionId },
-    });
-
-    if (!existingSession) {
-      const title =
-        messages[0]?.content?.slice(0, 50) || "New Conversation";
-      await prisma.chatSession.create({
-        data: {
-          id: sessionId,
-          userId,
-          title,
-        },
-      });
-    }
-
-    // Save user message
-    const lastUserMessage = messages[messages.length - 1];
-    await prisma.message.create({
-      data: {
-        sessionId,
-        role: "user",
-        content: lastUserMessage.content,
-      },
-    });
-  } catch (error) {
-    console.error("Failed to save user message:", error);
   }
 }

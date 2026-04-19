@@ -1,7 +1,7 @@
 import { requireAuth } from "@/lib/auth-guard";
 import { notFound } from "next/navigation";
 import { getChatSessions, getChatSessionMessages } from "@/app/actions/chat-actions";
-import ChatPage from "../page";
+import ChatClient from "../ChatClient";
 
 export default async function ChatSessionPage({
   params,
@@ -13,17 +13,19 @@ export default async function ChatSessionPage({
 
   const { sessionId } = await params;
 
-  const sessions = await getChatSessions();
-  const messages = await getChatSessionMessages(sessionId);
+  const [sessions, messages] = await Promise.all([
+    getChatSessions(),
+    getChatSessionMessages(sessionId),
+  ]);
 
   // Verify the session belongs to the user
   const currentSession = sessions.find((s) => s.id === sessionId);
-  if (!currentSession && messages.length === 0) {
+  if (!currentSession) {
     notFound();
   }
 
   return (
-    <ChatPage
+    <ChatClient
       sessions={sessions}
       messages={messages}
       currentSessionId={sessionId}

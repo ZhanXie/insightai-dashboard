@@ -78,3 +78,22 @@ export async function deleteChatSession(sessionId: string) {
 
   revalidatePath("/dashboard/chat");
 }
+
+export async function updateChatSessionTitle(sessionId: string, title: string) {
+  const guard = await requireAuth();
+  if ("response" in guard) throw new Error("Unauthorized");
+  const userId = guard.userId;
+
+  const chatSession = await prisma.chatSession.findFirst({
+    where: { id: sessionId, userId },
+  });
+
+  if (!chatSession) throw new Error("Chat session not found");
+
+  await prisma.chatSession.update({
+    where: { id: sessionId },
+    data: { title },
+  });
+
+  revalidatePath("/dashboard/chat");
+}
