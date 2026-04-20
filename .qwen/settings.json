@@ -20,7 +20,8 @@
       "Bash(docker exec *)",
       "Bash(curl *)",
       "Bash(lsof *)",
-      "WebFetch(nextjs.org)"
+      "WebFetch(nextjs.org)",
+      "Bash(docker ps *)"
     ]
   },
   "$version": 3

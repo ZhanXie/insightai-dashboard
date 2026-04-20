@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { redirect } from "next/navigation";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
@@ -9,16 +9,16 @@ export default async function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const session = await auth();
-
-  if (!session) {
+  const guard = await requireAuth();
+  if ("response" in guard) {
     redirect("/login");
   }
+  const session = guard.session;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="flex h-screen flex-col bg-gray-50">
       {/* Top Navigation */}
-      <nav className="border-b border-gray-200 bg-white">
+      <nav className="shrink-0 border-b border-gray-200 bg-white">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-8">
             <Link href="/dashboard" className="text-xl font-bold text-gray-900">
@@ -62,10 +62,10 @@ export default async function DashboardLayout({
       </nav>
 
       {/* Main Content */}
-      <main className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
+      <main className="min-h-0 flex-1">
         <Suspense
           fallback={
-            <div className="animate-pulse space-y-4">
+            <div className="animate-pulse space-y-4 p-6">
               <div className="h-8 w-48 rounded bg-gray-200" />
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 {[...Array(4)].map((_, i) => (

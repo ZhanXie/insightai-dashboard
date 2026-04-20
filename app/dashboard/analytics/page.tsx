@@ -18,7 +18,7 @@ export default async function AnalyticsPage() {
     ]);
 
   return (
-    <div>
+    <div className="p-6">
       <h1 className="mb-6 text-2xl font-bold">Analytics</h1>
 
       <div className="grid gap-6 md:grid-cols-2">

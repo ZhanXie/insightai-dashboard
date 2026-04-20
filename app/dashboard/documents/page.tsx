@@ -46,7 +46,7 @@ export default async function DocumentsPage() {
   const documents = await getDocuments(session.user.id);
 
   return (
-    <div>
+    <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold">Documents</h1>
       </div>

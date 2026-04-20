@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -7,17 +7,15 @@ export async function DELETE(
   _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAuth();
+  if ("response" in guard) return guard.response;
+  const userId = guard.userId;
 
   const { id } = await params;
 
   // Verify ownership and delete (cascade will handle chunks)
   const document = await prisma.document.findFirst({
-    where: { id, userId: session.user.id },
+    where: { id, userId },
   });
 
   if (!document) {

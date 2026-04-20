@@ -1,4 +1,4 @@
-import { auth } from "@/app/api/auth/[...nextauth]/auth";
+import { requireAuth } from "@/lib/auth-guard";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { extractTextFromFile, chunkText } from "@/lib/document-processor";
@@ -15,11 +15,9 @@ const ALLOWED_MIME_TYPES: Record<string, string> = {
 };
 
 export async function POST(request: Request) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
+  const guard = await requireAuth();
+  if ("response" in guard) return guard.response;
+  const userId = guard.userId;
 
   try {
     const formData = await request.formData();
@@ -60,7 +58,7 @@ export async function POST(request: Request) {
     // Create document record first
     const document = await prisma.document.create({
       data: {
-        userId: session.user.id,
+        userId,
         filename: file.name,
         fileSize: file.size,
         mimeType,
@@ -104,18 +102,21 @@ export async function POST(request: Request) {
     });
 
     // Insert chunks with embeddings using raw SQL (pgvector compatibility)
-    for (let i = 0; i < chunks.length; i++) {
-      const chunk = chunks[i];
-      const embedding = embeddings[i];
+    // Wrap all inserts in a transaction to ensure atomicity
+    await prisma.$transaction(async (tx) => {
+      for (let i = 0; i < chunks.length; i++) {
+        const chunk = chunks[i];
+        const embedding = embeddings[i];
 
-      // Convert embedding array to pgvector format string
-      const embeddingStr = `[${embedding.join(",")}]`;
+        // Convert embedding array to pgvector format string
+        const embeddingStr = `[${embedding.join(",")}]`;
 
-      await prisma.$executeRaw`
-        INSERT INTO chunks (id, document_id, content, position, embedding)
-        VALUES (${crypto.randomUUID()}, ${document.id}, ${chunk.content}, ${chunk.position}, ${embeddingStr}::vector)
-      `;
-    }
+        await tx.$executeRaw`
+          INSERT INTO chunks (id, document_id, content, position, embedding)
+          VALUES (${crypto.randomUUID()}, ${document.id}, ${chunk.content}, ${chunk.position}, ${embeddingStr}::vector)
+        `;
+      }
+    });
 
     // Update document status to ready
     await prisma.document.update({
