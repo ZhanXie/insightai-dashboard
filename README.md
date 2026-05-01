@@ -1,53 +1,40 @@
-# AI Dashboard / AI 智能仪表盘
+# InsightAI Dashboard
 
-> A full-stack AI dashboard with RAG (Retrieval-Augmented Generation) knowledge base chat and data visualization.
-> 一个全栈 AI 仪表盘，具备 RAG（检索增强生成）知识库聊天和数据可视化功能。
+> A modern full-stack AI dashboard with RAG (Retrieval-Augmented Generation) chat, document management, and advanced analytics
 
----
+[![Next.js](https://img.shields.io/badge/Next.js-16.2.3-black?style=flat&logo=next.js)](https://nextjs.org/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
+[![Prisma](https://img.shields.io/badge/Prisma-7.8.0-2D3748?style=flat&logo=prisma)](https://prisma.io/)
+[![Tailwind CSS](https://img.shields.io/badge/Tailwind-4.0-06B6D4?style=flat&logo=tailwindcss)](https://tailwindcss.com/)
 
-## Tech Stack / 技术栈
+## ✨ Features
 
-| Layer | Technology |
-|-------|-----------|
-| Framework | Next.js 16 (App Router) |
-| Language | TypeScript 5 |
-| Styling | Tailwind CSS 4 |
-| Auth | Auth.js v5 (next-auth@5) |
-| Database | Supabase PostgreSQL + Prisma ORM 6 + pgvector |
-| AI | Vercel AI SDK 4 + Tencent Hunyuan (OpenAI-compatible API) |
-| Charts | Recharts 3 |
-| Deployment | Vercel Hobby (free) |
+- **🤖 AI-Powered Chat**: RAG-based conversations with your documents using pgvector
+- **📁 Document Management**: Upload, process, and manage various file types (PDF, DOCX, TXT)
+- **📈 Advanced Analytics**: Visualize usage data with interactive charts and insights
+- **🔐 Secure Authentication**: Email/password authentication with NextAuth.js
+- **🎨 Modern UI**: Clean, responsive design built with shadcn/ui components
+- **⚡ Real-time Processing**: Background document processing with vector embeddings
+- **🐳 Docker Support**: Containerized development with PostgreSQL + pgvector
 
-## Features / 功能特性
+## 🚀 Quick Start
 
-- **User Authentication** — Register, login, session management with Auth.js v5
-- **Document Upload** — Upload PDF/TXT/MD/DOCX files (up to 50MB), auto text extraction, chunking, and vector embedding
-- **RAG Chat** — AI chat powered by vector similarity search, streaming responses via Server-Sent Events
-- **Data Visualization** — Dashboard with Recharts: document trends, chat activity, format distribution
-- **User Data Isolation** — All queries scoped by user ID, strict data separation
-- **Zero-Cost Deployment** — Vercel Hobby + Supabase free tier
-
----
-
-## Quick Start / 快速开始
-
-### Prerequisites / 前置要求
-
+### Prerequisites
 - Node.js 18+
-- PostgreSQL database (recommended: [Supabase](https://supabase.com/))
-- Tencent Hunyuan API Key ([Get one here](https://console.cloud.tencent.com/hunyuan/api-key))
+- Docker (optional, for local database)
+- AI API Key (OpenAI or compatible)
 
-### 1. Clone & Install / 克隆并安装
+### One-command Setup
 
 ```bash
-git clone <your-repo-url>
-cd insightai-dashboard
+# Clone and setup with Docker database
 npm run setup
+
+# Or for a complete fresh start
+npm run reset
 ```
 
-`npm run setup` runs `npm install` + `prisma generate` + `prisma db push` in one command.
-
-### 2. Configure Environment / 配置环境变量
+### Environment Configuration
 
 ```bash
 cp .env.example .env.local
@@ -56,229 +43,295 @@ cp .env.example .env.local
 Edit `.env.local` with your credentials:
 
 ```env
-# Supabase PostgreSQL connection string
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@db.YOUR_PROJECT_ID.supabase.co:5432/postgres?schema=public"
+# Database (use Docker or external)
+DATABASE_URL="postgresql://postgres:postgres@localhost:5432/insightai"
 
-# Tencent Hunyuan AI API Key
-HUNYUAN_API_KEY="YOUR_HUNYUAN_API_KEY"
+# AI Provider (OpenAI or compatible)
+AI_API_KEY="your-openai-api-key"
+AI_BASE_URL="https://api.openai.com/v1"  # Optional for other providers
 
-# Auth.js Secret (generate with: openssl rand -base64 32)
-AUTH_SECRET="your-random-secret-here"
-
-# Application URL
+# Authentication
+AUTH_SECRET="generate-with: openssl rand -base64 32"
 NEXTAUTH_URL="http://localhost:3000"
+
+# Optional: External database
+# DATABASE_URL="your-production-database-url"
 ```
 
-### 3. Enable pgvector / 启用 pgvector 扩展
-
-In your Supabase dashboard → **Database** → **Extensions**, enable the `pgvector` extension.
-
-Or via SQL:
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-### 4. Push Database Schema / 推送数据库 Schema
+### Start Development
 
 ```bash
-npm run db:push
-```
+# Standard development (requires external database)
+npm run dev
 
-### 5. Start Development Server / 启动开发服务器
+# Development with Docker database
+npm run dev:with-db
 
-```bash
-npm run dev          # standard dev server
-npm run dev:turbo    # faster with Turbopack
+# Complete Docker setup + development
+npm run dev:up
+
+# Clean development (reset database)
+npm run dev:clean
 ```
 
 Open [http://localhost:3000](http://localhost:3000) in your browser.
 
----
-
-## Available Scripts / 可用脚本
-
-### Development / 开发
-
-| Command | Description |
-|---------|------------|
-| `npm run dev` | Start development server |
-| `npm run build` | Production build |
-| `npm run start` | Start production server |
-| `npm run lint` | Run ESLint and auto-fix |
-| `npm run typecheck` | TypeScript type check (no emit) |
-
-### Database / 数据库
-
-| Command | Description |
-|---------|------------|
-| `npm run db:generate` | Generate Prisma Client |
-| `npm run db:push` | Push schema to database (development) |
-| `npm run db:migrate` | Deploy migrations to production |
-| `npm run db:deploy` | One-click deploy: generate + migrate |
-| `npm run db:studio` | Open Prisma Studio (visual DB browser) |
-| `npm run setup` | Install + generate + push (one-time setup) |
-
-### Production Deploy / 生产部署
-
-```bash
-npm run build
-npm run db:deploy
-npm start
-```
-
----
-
-## Project Structure / 项目结构
+## 🏗️ Project Structure
 
 ```
 insightai-dashboard/
-├── app/                              # Next.js App Router
-│   ├── api/                          # API Route Handlers
-│   │   ├── auth/[...nextauth]/       # Auth.js v5 authentication
-│   │   ├── chat/                     # RAG chat + session management
-│   │   ├── documents/                # Document CRUD + upload
-│   │   └── register/                 # User registration
-│   ├── actions/                      # Server Actions
-│   ├── login/                        # Login page
-│   ├── register/                     # Registration page
-│   └── dashboard/                    # Protected dashboard pages
-│       ├── chat/                     # AI chat interface
-│       ├── documents/                # Document management
-│       └── analytics/                # Data visualization
-├── components/                       # Reusable React components
-│   ├── FileUpload.tsx                # Drag & drop file uploader
-│   ├── ChatSidebar.tsx               # Chat session sidebar
-│   ├── Charts.tsx                    # Recharts chart components
-│   ├── StatCard.tsx                  # Dashboard stat cards
-│   ├── LogoutButton.tsx              # Logout button
-│   └── DeleteDocumentButton.tsx      # Document delete button
-├── lib/                              # Utility libraries
-│   ├── prisma.ts                     # Prisma client singleton
-│   ├── ai.ts                         # AI model configuration
-│   ├── document-processor.ts         # Text extraction & chunking
-│   └── vector-search.ts              # pgvector similarity search
-├── prisma/
-│   └── schema.prisma                 # Database schema (5 models + pgvector)
-├── types/
-│   └── next-auth.d.ts                # Auth.js type extensions
-├── middleware.ts                     # Route protection middleware
-├── .env.example                      # Environment variables template
-└── .env.local                        # Local env (gitignored)
+├── app/                    # Next.js App Router
+│   ├── actions/           # Server actions
+│   ├── api/               # API routes
+│   │   ├── auth/          # Authentication endpoints
+│   │   ├── chat/          # AI chat API
+│   │   ├── documents/     # Document management API
+│   │   └── register/      # User registration
+│   ├── dashboard/         # Protected dashboard routes
+│   │   ├── analytics/     # Analytics dashboard
+│   │   ├── chat/          # Chat interface
+│   │   ├── documents/     # Document management
+│   │   └── layout.tsx     # Dashboard layout
+│   ├── login/             # Login page
+│   ├── register/          # Registration page
+│   └── globals.css        # Global styles
+├── components/            # React components
+│   ├── ui/                # Reusable UI components (shadcn)
+│   ├── Charts.tsx         # Analytics charts
+│   ├── ChatSidebar.tsx    # Chat sidebar component
+│   ├── DeleteDocumentButton.tsx
+│   ├── FileUpload.tsx     # Document upload component
+│   └── LogoutButton.tsx
+├── lib/                   # Utilities and libraries
+│   ├── analytics/         # Analytics utilities
+│   ├── auth/              # Authentication utilities
+│   ├── chat/              # Chat functionality
+│   ├── documents/         # Document processing
+│   ├── http/              # HTTP utilities
+│   ├── shared/            # Shared utilities
+│   ├── ai.ts              # AI integration
+│   ├── auth-guard.ts      # Route protection
+│   ├── document-processor.ts
+│   ├── env.ts             # Environment validation
+│   ├── prisma.ts          # Database client
+│   ├── utils.ts           # General utilities
+│   └── vector-search.ts   # Vector search
+├── prisma/                # Database schema
+│   └── schema.prisma      # Prisma schema with pgvector
+├── types/                 # TypeScript type definitions
+│   └── next-auth.d.ts     # NextAuth type extensions
+├── openspec/              # OpenSpec documentation
+└── public/                # Static assets
 ```
 
----
+## 🛠️ Technology Stack
 
-## Architecture / 架构设计
+- **Framework**: Next.js 16+ (App Router)
+- **Language**: TypeScript 5+
+- **Styling**: Tailwind CSS 4 + shadcn/ui
+- **Database**: PostgreSQL + Prisma ORM + pgvector
+- **Authentication**: NextAuth.js with email/password
+- **AI Integration**: Vercel AI SDK with OpenAI
+- **Charts**: Recharts for data visualization
+- **File Processing**: PDF, DOCX, and text processing
+- **Deployment**: Vercel + Docker support
 
-### RAG Flow / RAG 流程
+## 📦 Available Scripts
 
-```
-Upload Document
-    │
-    ▼
-┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  Extract Text   │────▶│  Chunk Text       │────▶│  Generate Embed- │
-│  (pdf-parse,    │     │  (500-1000 tokens │     │  dings (Hunyuan) │
-│   mammoth)      │     │   + 100 overlap)  │     │                  │
-└─────────────────┘     └──────────────────┘     └─────────┬────────┘
-                                                           │
-                                                           ▼
-                                                  ┌──────────────────┐
-                                                  │  Store in Post-  │
-                                                  │  gres (pgvector) │
-                                                  └──────────────────┘
-
-Chat Query
-    │
-    ▼
-┌─────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│  Generate Query │────▶│  Vector Similar-  │────▶│  Build Augmented │
-│  Embedding      │     │  ity Search (Top-5│     │  Prompt + Stream │
-│                 │     │   user-scoped)    │     │  AI Response     │
-└─────────────────┘     └──────────────────┘     └──────────────────┘
+### Development
+```bash
+npm run dev              # Start development server
+npm run dev:with-db      # Dev server with Docker database
+npm run dev:clean        # Reset DB and start dev server
+npm run dev:up           # Full Docker setup + development
 ```
 
-### Data Models / 数据模型
-
+### Database Management
+```bash
+npm run db:generate      # Generate Prisma Client
+npm run db:push          # Push schema to database
+npm run db:migrate       # Deploy migrations
+npm run db:reset         # Reset database (force)
+npm run db:studio        # Open Prisma Studio
+npm run db:status        # Check migration status
+npm run db:deploy        # Generate + deploy migrations
 ```
-User ──┬── Document ── Chunk (with pgvector embedding)
-       │
-       └── ChatSession ── Message (user/assistant)
+
+### Testing & Quality
+```bash
+npm run test             # Run Jest tests
+npm run test:watch       # Run tests in watch mode
+npm run test:coverage    # Generate test coverage
+npm run lint             # Run ESLint with auto-fix
+npm run typecheck        # TypeScript type checking
+npm run check            # Full code quality check
+npm run check:ci         # CI-friendly code check
 ```
 
-### API Route Handler vs Server Action
+### Build & Deployment
+```bash
+npm run build            # Production build
+npm run build:prod       # Production build with NODE_ENV
+npm run build:analyze    # Build with bundle analysis
+npm run start            # Start production server
+npm run deploy           # Full deployment pipeline
+npm run preview          # Build + start for preview
+```
 
-| Scenario | Choice | Reason |
-|----------|--------|--------|
-| Streaming AI response | **API Handler** | Only API routes support SSE streaming |
-| Form submission (login/register) | **Server Action** | Progressive enhancement, auto-serialization |
-| Server-side data fetching | **Server Action** | Best performance, no HTTP round-trip |
-| RESTful CRUD operations | **API Handler** | Clear HTTP semantics |
-| External/third-party calls | **API Handler** | Only externally accessible endpoints |
+### Docker Management
+```bash
+npm run docker:up        # Start Docker services
+npm run docker:down      # Stop Docker services
+npm run docker:restart   # Restart Docker services
+npm run docker:logs      # View Docker logs
+```
 
----
+### Utilities
+```bash
+npm run setup            # Install + generate + push DB
+npm run reset            # Complete environment reset
+npm run clean            # Clean cache files
+npm run clean:all        # Complete clean (node_modules)
+npm run format           # Format code with Prettier
+npm run format:check     # Check code formatting
+npm run audit            # Security audit
+npm run ci               # CI/CD pipeline simulation
+```
 
-## Deployment / 部署
+## 📊 Core Features
 
-### Vercel + Supabase
+### AI Chat with RAG
+- Upload documents and chat with AI about their content
+- Real-time document processing with vector embeddings
+- Context-aware responses based on your documents
+- Support for multiple document formats
 
-1. Push your code to GitHub
-2. Import project in [Vercel](https://vercel.com/new)
-3. Set environment variables:
-   - `DATABASE_URL` (Supabase connection string)
-   - `HUNYUAN_API_KEY`
-   - `AUTH_SECRET` (generate with `openssl rand -base64 32`)
-4. Deploy!
+### Document Management
+- Upload PDF, DOCX, and text files
+- Automatic chunking and vector embedding
+- Document status tracking (pending, processing, ready, error)
+- File metadata and statistics
 
-### Production Database Migration
+### Analytics Dashboard
+- Usage statistics and metrics
+- Interactive charts and visualizations
+- Document processing analytics
+- User activity tracking
 
-Deploy database to production:
+### Authentication
+- Email/password authentication
+- Protected routes and API endpoints
+- Session management with NextAuth.js
+- Secure password hashing
+
+## 🚢 Deployment
+
+### Vercel Deployment
+1. Connect your GitHub repository to Vercel
+2. Set environment variables in Vercel dashboard:
+   - `DATABASE_URL`: Your production PostgreSQL URL
+   - `AI_API_KEY`: Your OpenAI API key
+   - `AUTH_SECRET`: Secure random secret
+   - `NEXTAUTH_URL`: Your production domain
+3. Deploy automatically on push to main branch
+
+### Docker Deployment
+```bash
+# Production deployment with Docker
+npm run build:prod
+docker-compose up -d
+
+# Or use the included script
+npm run deploy
+```
+
+### Environment Variables for Production
+```env
+# Required
+DATABASE_URL=your-production-database-url
+AI_API_KEY=your-ai-provider-api-key
+AUTH_SECRET=your-secure-secret
+NEXTAUTH_URL=https://your-domain.com
+
+# Optional
+NODE_ENV=production
+ENABLE_ANALYTICS=true
+```
+
+## 🧪 Testing
+
+Run the test suite:
 
 ```bash
-npm run db:deploy
-# Equivalent to: npx prisma generate && npx prisma migrate deploy
+# Run all tests
+npm run test
+
+# Run tests with coverage
+npm run test:coverage
+
+# Run tests in watch mode
+npm run test:watch
 ```
 
-⚠️ **Important**: 
-- Use `db:deploy` for new production databases
-- Use `db:push` only for local development
+## 🤝 Contributing
 
-### Docker Deployment (Optional)
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'Add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-```bash
-# Build and run with docker-compose
-docker-compose -f docker-compose.yml up -d
-```
+## 📝 License
 
-Environment variables can be set in `.env` file or directly in docker-compose.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🆘 Support
+
+If you encounter any issues:
+
+1. Check the [Troubleshooting](#-troubleshooting) section below
+2. Search existing GitHub Issues
+3. Create a new issue with detailed information
+
+## 🔍 Troubleshooting
+
+### Common Issues
+
+**Database Connection Issues**
+- Verify `DATABASE_URL` is correct
+- Check if database server is running
+- Run `npm run db:status` to check migrations
+
+**Authentication Problems**
+- Ensure `AUTH_SECRET` is set and valid
+- Check `NEXTAUTH_URL` matches your domain
+
+**Build Failures**
+- Run `npm run clean:all` and reinstall
+- Check TypeScript errors with `npm run typecheck`
+
+**Docker Issues**
+- Ensure Docker is running
+- Check ports are not already in use
+- Run `npm run docker:logs` for detailed errors
+
+### Performance Tips
+
+- Use `npm run build:analyze` to identify large bundles
+- Enable compression in production
+- Use CDN for static assets
+- Implement database indexing for large datasets
+
+## 📈 Monitoring
+
+For production monitoring:
+- Enable logging with `NODE_ENV=production`
+- Set up error tracking (Sentry, etc.)
+- Monitor database performance
+- Track AI API usage and costs
 
 ---
 
-## Troubleshooting / 常见问题
+## 🌐 Localization
 
-### Build fails with pgvector errors
-Make sure `pgvector` extension is enabled in your PostgreSQL database:
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-### Auth.js session issues
-- Ensure `AUTH_SECRET` is set in `.env.local`
-- Regenerate the secret: `openssl rand -base64 32`
-- Clear browser cookies and try again
-
-### Document upload fails
-- Check file size is under 50MB
-- Verify supported formats: PDF, TXT, MD, DOCX
-- Check Vercel serverless function timeout (Hobby tier: 10s limit)
-
-### AI chat not returning results
-- Verify `HUNYUAN_API_KEY` is correct
-- Check that documents have status "ready"
-- Review browser console for streaming errors
-
----
-
-## License / 许可证
-
-MIT
+This project supports multiple languages. Check out the Chinese version: [README.zh-CN.md](README.zh-CN.md)

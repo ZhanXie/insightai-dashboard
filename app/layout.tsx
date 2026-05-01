@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ui/ThemeProvider";
 import { ToastProvider } from "@/components/ui/ToastProvider";
+import { ProgressBar } from "@/components/ui/ProgressBar";
 
 export const metadata: Metadata = {
   title: "AI Dashboard",
@@ -23,6 +24,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <ProgressBar />
           <ToastProvider>{children}</ToastProvider>
         </ThemeProvider>
       </body>
