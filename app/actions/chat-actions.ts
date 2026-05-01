@@ -1,62 +1,42 @@
 "use server";
 
 import { requireAuth } from "@/lib/auth-guard";
-import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import {
+  createSession,
+  getSession,
+  listSessions,
+  deleteSession,
+  updateSessionTitle,
+} from "@/lib/chat/session-service";
+import { getMessages } from "@/lib/chat/message-service";
 
 export async function getChatSessions() {
   const guard = await requireAuth();
   if ("response" in guard) return [];
-  const userId = guard.userId;
+  const { userId } = guard;
 
-  return prisma.chatSession.findMany({
-    where: { userId },
-    orderBy: { updatedAt: "desc" },
-    select: {
-      id: true,
-      title: true,
-      createdAt: true,
-      updatedAt: true,
-    },
-  });
+  return listSessions(userId);
 }
 
 export async function getChatSessionMessages(sessionId: string) {
   const guard = await requireAuth();
   if ("response" in guard) return [];
-  const userId = guard.userId;
+  const { userId } = guard;
 
   // Verify ownership
-  const chatSession = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId },
-  });
+  const session = await getSession(sessionId, userId);
+  if (!session) return [];
 
-  if (!chatSession) return [];
-
-  return prisma.message.findMany({
-    where: { sessionId },
-    orderBy: { createdAt: "asc" },
-    select: {
-      id: true,
-      role: true,
-      content: true,
-      createdAt: true,
-    },
-  });
+  return getMessages(sessionId);
 }
 
 export async function createChatSession() {
   const guard = await requireAuth();
   if ("response" in guard) throw new Error("Unauthorized");
-  const userId = guard.userId;
+  const { userId } = guard;
 
-  const chatSession = await prisma.chatSession.create({
-    data: {
-      userId,
-      title: "New Conversation",
-    },
-  });
-
+  const chatSession = await createSession(userId);
   revalidatePath("/dashboard/chat");
   return chatSession;
 }
@@ -64,36 +44,17 @@ export async function createChatSession() {
 export async function deleteChatSession(sessionId: string) {
   const guard = await requireAuth();
   if ("response" in guard) throw new Error("Unauthorized");
-  const userId = guard.userId;
+  const { userId } = guard;
 
-  const chatSession = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId },
-  });
-
-  if (!chatSession) throw new Error("Chat session not found");
-
-  await prisma.chatSession.delete({
-    where: { id: sessionId },
-  });
-
+  await deleteSession(sessionId, userId);
   revalidatePath("/dashboard/chat");
 }
 
 export async function updateChatSessionTitle(sessionId: string, title: string) {
   const guard = await requireAuth();
   if ("response" in guard) throw new Error("Unauthorized");
-  const userId = guard.userId;
+  const { userId } = guard;
 
-  const chatSession = await prisma.chatSession.findFirst({
-    where: { id: sessionId, userId },
-  });
-
-  if (!chatSession) throw new Error("Chat session not found");
-
-  await prisma.chatSession.update({
-    where: { id: sessionId },
-    data: { title },
-  });
-
+  await updateSessionTitle(sessionId, userId, title);
   revalidatePath("/dashboard/chat");
 }

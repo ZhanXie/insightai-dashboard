@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { UploadIcon } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
 
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 const ALLOWED_TYPES = [
@@ -29,7 +31,12 @@ export default function FileUpload({
 
   const validateFile = useCallback(
     (file: File): string | null => {
-      if (!ALLOWED_TYPES.includes(file.type) && !ALLOWED_EXTENSIONS.some((ext) => file.name.toLowerCase().endsWith(ext))) {
+      if (
+        !ALLOWED_TYPES.includes(file.type) &&
+        !ALLOWED_EXTENSIONS.some((ext) =>
+          file.name.toLowerCase().endsWith(ext)
+        )
+      ) {
         return `Unsupported file format. Supported: PDF, TXT, MD, DOCX`;
       }
       if (file.size > MAX_FILE_SIZE) {
@@ -130,8 +137,8 @@ export default function FileUpload({
         onDrop={handleDrop}
         className={`relative rounded-lg border-2 border-dashed p-8 text-center transition-colors ${
           dragActive
-            ? "border-blue-500 bg-blue-50"
-            : "border-gray-300 hover:border-gray-400"
+            ? "border-primary bg-primary/5"
+            : "border-muted-foreground/25 hover:border-muted-foreground/50"
         } ${uploading ? "pointer-events-none opacity-50" : ""}`}
       >
         <input
@@ -141,47 +148,32 @@ export default function FileUpload({
           disabled={uploading}
           className="absolute inset-0 h-full w-full cursor-pointer opacity-0 disabled:cursor-not-allowed"
         />
-        <div className="text-gray-600">
-          <svg
-            className="mx-auto mb-4 h-12 w-12 text-gray-400"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
+        <div className="text-muted-foreground">
+          <UploadIcon className="mx-auto mb-4 h-12 w-12 text-muted-foreground/50" />
           <p className="text-sm">
             {uploading ? (
               <span>Uploading... {progress}%</span>
             ) : (
               <>
-                <span className="font-medium text-blue-600">Click to upload</span>
-                {" or drag and drop"}
+                <span className="font-medium text-primary">
+                  Click to upload
+                </span>{" "}
+                or drag and drop
               </>
             )}
           </p>
-          <p className="mt-1 text-xs text-gray-500">
+          <p className="mt-1 text-xs text-muted-foreground/60">
             PDF, TXT, MD, DOCX (max 50MB)
           </p>
         </div>
       </div>
 
       {uploading && (
-        <div className="mt-2 h-2 w-full rounded-full bg-gray-200">
-          <div
-            className="h-2 rounded-full bg-blue-600 transition-all"
-            style={{ width: `${progress}%` }}
-          />
-        </div>
+        <Progress value={progress} className="mt-2" />
       )}
 
       {error && (
-        <div className="mt-2 rounded-md bg-red-50 p-2 text-sm text-red-600">
+        <div className="mt-2 rounded-md bg-destructive/10 p-2 text-sm text-destructive">
           {error}
         </div>
       )}

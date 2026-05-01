@@ -4,6 +4,10 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
+import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Alert } from "@/components/ui/alert";
 
 async function registerUser(
   email: string,
@@ -53,7 +57,6 @@ export default function RegisterPage() {
       return;
     }
 
-    // Auto sign in after registration
     const signInResult = await signIn("credentials", {
       email,
       password,
@@ -69,88 +72,84 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gray-50">
-      <div className="w-full max-w-md rounded-lg bg-white p-8 shadow">
-        <h1 className="mb-6 text-center text-2xl font-bold">
-          Create Account
-        </h1>
-
-        {error && (
-          <div className="mb-4 rounded-md bg-red-50 p-3 text-sm text-red-600">
-            {error}
-          </div>
-        )}
-
-        <form onSubmit={handleSubmit}>
-          <div className="mb-4">
-            <label
-              htmlFor="email"
-              className="mb-1 block text-sm font-medium text-gray-700"
+    <div className="flex min-h-screen items-center justify-center bg-background">
+      <Card className="w-full max-w-md">
+        <CardHeader>
+          <CardTitle className="text-center text-2xl">
+            Create Account
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {error && (
+            <Alert variant="destructive" className="mb-4">
+              {error}
+            </Alert>
+          )}
+          <form onSubmit={handleSubmit}>
+            <div className="mb-4">
+              <label
+                htmlFor="email"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
+                Email
+              </label>
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                required
+                placeholder="you@example.com"
+              />
+            </div>
+            <div className="mb-4">
+              <label
+                htmlFor="password"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
+                Password
+              </label>
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                minLength={6}
+                placeholder="••••••••"
+              />
+            </div>
+            <div className="mb-6">
+              <label
+                htmlFor="confirmPassword"
+                className="mb-1 block text-sm font-medium text-foreground"
+              >
+                Confirm Password
+              </label>
+              <Input
+                id="confirmPassword"
+                name="confirmPassword"
+                type="password"
+                required
+                minLength={6}
+                placeholder="••••••••"
+              />
+            </div>
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "Creating account..." : "Register"}
+            </Button>
+          </form>
+        </CardContent>
+        <CardFooter className="justify-center">
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{" "}
+            <Link
+              href="/login"
+              className="text-primary hover:underline font-medium"
             >
-              Email
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              required
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="you@example.com"
-            />
-          </div>
-
-          <div className="mb-4">
-            <label
-              htmlFor="password"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Password
-            </label>
-            <input
-              id="password"
-              name="password"
-              type="password"
-              required
-              minLength={6}
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <div className="mb-6">
-            <label
-              htmlFor="confirmPassword"
-              className="mb-1 block text-sm font-medium text-gray-700"
-            >
-              Confirm Password
-            </label>
-            <input
-              id="confirmPassword"
-              name="confirmPassword"
-              type="password"
-              required
-              minLength={6}
-              className="w-full rounded-md border border-gray-300 px-3 py-2"
-              placeholder="••••••••"
-            />
-          </div>
-
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full rounded-md bg-blue-600 px-4 py-2 text-white hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? "Creating account..." : "Register"}
-          </button>
-        </form>
-
-        <p className="mt-4 text-center text-sm text-gray-600">
-          Already have an account?{" "}
-          <Link href="/login" className="text-blue-600 hover:underline">
-            Sign in
-          </Link>
-        </p>
-      </div>
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
+      </Card>
     </div>
   );
 }

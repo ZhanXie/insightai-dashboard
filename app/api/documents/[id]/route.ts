@@ -1,33 +1,26 @@
-import { requireAuth } from "@/lib/auth-guard";
-import { NextResponse } from "next/server";
+import { withAuth } from "@/lib/http/handler";
 import { prisma } from "@/lib/prisma";
+import { ApiError } from "@/lib/http/api-error";
 
-// DELETE /api/documents/[id] - Delete a document and its chunks
 export async function DELETE(
-  _request: Request,
+  request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const guard = await requireAuth();
-  if ("response" in guard) return guard.response;
-  const userId = guard.userId;
-
   const { id } = await params;
 
-  // Verify ownership and delete (cascade will handle chunks)
-  const document = await prisma.document.findFirst({
-    where: { id, userId },
-  });
+  return withAuth(async (_req, { userId }) => {
+    const document = await prisma.document.findFirst({
+      where: { id, userId },
+    });
 
-  if (!document) {
-    return NextResponse.json(
-      { error: "Document not found" },
-      { status: 404 }
-    );
-  }
+    if (!document) {
+      throw new ApiError(404, "Document not found");
+    }
 
-  await prisma.document.delete({
-    where: { id },
-  });
+    await prisma.document.delete({
+      where: { id },
+    });
 
-  return NextResponse.json({ message: "Document deleted successfully" });
+    return { message: "Document deleted successfully" };
+  })(request);
 }
