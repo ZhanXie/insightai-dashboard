@@ -1,9 +1,11 @@
 import NextAuth, { type NextAuthConfig } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
+import type { PrismaClient } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const authConfig: NextAuthConfig = {
+  // @ts-expect-error Prisma 7 client type is incompatible with adapter types, but runtime is compatible
   adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
