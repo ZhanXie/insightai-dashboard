@@ -2,9 +2,13 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { deleteChatSession } from "@/app/actions/chat-actions";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { Pencil, X } from "lucide-react";
 
 interface Session {
   id: string;
@@ -23,6 +27,7 @@ interface ChatSidebarProps {
   onEditingTitleChange?: (value: string) => void;
   onSaveTitle?: (sessionId: string) => void;
   onCancelEdit?: () => void;
+  editingSessionId?: string | null;
 }
 
 export default function ChatSidebar({
@@ -35,18 +40,38 @@ export default function ChatSidebar({
   onEditingTitleChange,
   onSaveTitle,
   onCancelEdit,
+  editingSessionId,
 }: ChatSidebarProps) {
   const router = useRouter();
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [savingSessionId, setSavingSessionId] = useState<string | null>(null);
 
   const handleDelete = async (sessionId: string, e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (!confirm("Delete this chat session?")) return;
-    await deleteChatSession(sessionId);
-    if (sessionId === currentSessionId) {
-      router.push("/dashboard/chat");
-    } else {
-      router.refresh();
+    setSessionToDelete(sessionId);
+    setDeleteConfirmOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!sessionToDelete) return;
+
+    setDeletingSessionId(sessionToDelete);
+    try {
+      await deleteChatSession(sessionToDelete);
+      if (sessionToDelete === currentSessionId) {
+        router.push("/dashboard/chat");
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+    } finally {
+      setSessionToDelete(null);
+      setDeleteConfirmOpen(false);
+      setDeletingSessionId(null);
     }
   };
 
@@ -92,35 +117,40 @@ export default function ChatSidebar({
                 >
                   {isEditingTitle === session.id ? (
                     <div className="flex items-center gap-1">
-                      <input
-                        type="text"
+                      <Input
                         value={editingTitleValue}
                         onChange={(e) => onEditingTitleChange?.(e.target.value)}
                         onKeyDown={(e) => handleKeyDown(session.id, e)}
-                        className="flex-1 rounded border border-input bg-background px-1 py-0.5 text-sm focus:border-ring focus:outline-none"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
+                        className="h-6 text-xs"
                       />
-                      <button
+                      <Button
+                        size="xs"
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
                           onSaveTitle?.(session.id);
                         }}
-                        className="rounded bg-primary px-1 py-0.5 text-xs text-primary-foreground hover:bg-primary/80"
+                        disabled={savingSessionId === session.id}
                       >
-                        ✓
-                      </button>
-                      <button
+                        {savingSessionId === session.id ? (
+                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          "✓"
+                        )}
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="xs"
                         onClick={(e) => {
                           e.stopPropagation();
                           e.preventDefault();
                           onCancelEdit?.();
                         }}
-                        className="rounded bg-muted px-1 py-0.5 text-xs text-muted-foreground hover:bg-muted/80"
                       >
                         ✕
-                      </button>
+                      </Button>
                     </div>
                   ) : (
                     <>
@@ -134,48 +164,29 @@ export default function ChatSidebar({
 
                 {isEditingTitle !== session.id && (
                   <div className="absolute right-2 top-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) =>
                         handleEditClick(session.id, session.title, e)
                       }
-                      className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                       title="Edit title"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-                        />
-                      </svg>
-                    </button>
-                    <button
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
                       onClick={(e) => handleDelete(session.id, e)}
-                      className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       title="Delete"
+                      disabled={deletingSessionId === session.id}
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M6 18L18 6M6 6l12 12"
-                        />
-                      </svg>
-                    </button>
+                      {deletingSessionId === session.id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
+                    </Button>
                   </div>
                 )}
               </li>
@@ -183,6 +194,15 @@ export default function ChatSidebar({
           </ul>
         )}
       </div>
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        title="Delete Chat Session"
+        description="Are you sure you want to delete this chat session? This action cannot be undone."
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={confirmDelete}
+      />
     </div>
   );
 }
