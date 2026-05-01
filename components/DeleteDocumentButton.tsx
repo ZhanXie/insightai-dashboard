@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
+import { useToast } from "@/components/ui/ToastProvider";
 
 interface DeleteDocumentButtonProps {
   documentId: string;
@@ -17,6 +18,7 @@ export default function DeleteDocumentButton({
   onDeleted,
 }: DeleteDocumentButtonProps) {
   const router = useRouter();
+  const { addToast } = useToast();
   const [deleting, setDeleting] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
 
@@ -29,13 +31,14 @@ export default function DeleteDocumentButton({
       });
 
       if (res.ok) {
+        addToast("Document deleted successfully", "success");
         router.refresh();
         onDeleted?.();
       } else {
-        alert("Failed to delete document");
+        addToast("Failed to delete document", "destructive");
       }
     } catch {
-      alert("An error occurred while deleting");
+      addToast("An error occurred while deleting", "destructive");
     } finally {
       setDeleting(false);
     }

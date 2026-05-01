@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     // Validate file type
     let mimeType = file.type;
-    let extension = file.name.split(".").pop()?.toLowerCase();
+    const extension = file.name.split(".").pop()?.toLowerCase();
     
     // Try MIME type validation first
     let validationResult = validateMime(mimeType);

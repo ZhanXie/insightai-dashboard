@@ -2,15 +2,18 @@
 
 import { signOut } from "next-auth/react";
 import { LogOutIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export default function LogoutButton() {
   return (
-    <button
+    <Button
+      variant="secondary"
+      size="sm"
       onClick={() => signOut({ callbackUrl: "/login" })}
-      className="inline-flex items-center gap-1.5 rounded-md bg-muted px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted/80 transition-colors"
+      className="gap-1.5"
     >
       <LogOutIcon className="size-3.5" />
       Sign Out
-    </button>
+    </Button>
   );
 }

@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 const COLORS = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6", "#EC4899"];
 
@@ -55,17 +56,14 @@ function DocumentsOverTimeChart({ data }: DocumentsOverTimeChartProps) {
     <div>
       <div className="mb-4 flex gap-2">
         {(["day", "week", "month"] as const).map((agg) => (
-          <button
+          <Button
             key={agg}
+            variant={aggregation === agg ? "default" : "outline"}
+            size="sm"
             onClick={() => setAggregation(agg)}
-            className={`rounded px-3 py-1 text-sm ${
-              aggregation === agg
-                ? "bg-blue-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-            }`}
           >
             {agg.charAt(0).toUpperCase() + agg.slice(1)}
-          </button>
+          </Button>
         ))}
       </div>
       {chartData.length === 0 ? (
