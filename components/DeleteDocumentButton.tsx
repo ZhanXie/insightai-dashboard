@@ -8,11 +8,13 @@ import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 interface DeleteDocumentButtonProps {
   documentId: string;
   filename: string;
+  onDeleted?: () => void;
 }
 
 export default function DeleteDocumentButton({
   documentId,
   filename,
+  onDeleted,
 }: DeleteDocumentButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
@@ -28,6 +30,7 @@ export default function DeleteDocumentButton({
 
       if (res.ok) {
         router.refresh();
+        onDeleted?.();
       } else {
         alert("Failed to delete document");
       }

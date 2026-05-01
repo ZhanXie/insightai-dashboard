@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import { UploadIcon } from "lucide-react";
 import { Progress } from "@/components/ui/progress";
 
@@ -28,6 +28,7 @@ export default function FileUpload({
   const [uploading, setUploading] = useState(false);
   const [progress, setProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const validateFile = useCallback(
     (file: File): string | null => {
@@ -84,6 +85,10 @@ export default function FileUpload({
             setError(errorMsg);
             onUploadError?.(errorMsg);
           }
+          // 上传完成（成功或失败）后重置 input
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
         };
 
         xhr.onerror = () => {
@@ -91,6 +96,9 @@ export default function FileUpload({
           const errorMsg = "Network error during upload";
           setError(errorMsg);
           onUploadError?.(errorMsg);
+          if (fileInputRef.current) {
+            fileInputRef.current.value = "";
+          }
         };
 
         xhr.send(formData);
@@ -99,6 +107,9 @@ export default function FileUpload({
         const errorMsg = "An unexpected error occurred";
         setError(errorMsg);
         onUploadError?.(errorMsg);
+        if (fileInputRef.current) {
+          fileInputRef.current.value = "";
+        }
       }
     },
     [validateFile, onUploadComplete, onUploadError]
@@ -122,6 +133,8 @@ export default function FileUpload({
       if (file) {
         handleUpload(file);
       }
+      // 重置 input value，确保选择同一文件时也能触发 onChange
+      e.target.value = "";
     },
     [handleUpload]
   );
@@ -142,6 +155,7 @@ export default function FileUpload({
         } ${uploading ? "pointer-events-none opacity-50" : ""}`}
       >
         <input
+          ref={fileInputRef}
           type="file"
           accept=".pdf,.txt,.md,.docx"
           onChange={handleFileSelect}
