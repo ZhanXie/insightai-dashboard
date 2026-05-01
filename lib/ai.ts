@@ -1,3 +1,4 @@
+import "@/lib/env"; // Validate env vars first
 import { createOpenAI } from "@ai-sdk/openai";
 
 // OpenAI-compatible API provider
@@ -7,7 +8,7 @@ const aiProvider = createOpenAI({
 });
 
 // Chat model
-export const chatModel = aiProvider(process.env.OPENAI_CHAT_MODEL || "qwen3.6-plus-2026-04-02");
+export const chatModel = aiProvider(process.env.OPENAI_CHAT_MODEL || "qvq-max-latest");
 
 // Embedding model (separate from chat model)
 export const embeddingModel = aiProvider.embedding(

@@ -2,6 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 
 interface DeleteDocumentButtonProps {
   documentId: string;
@@ -14,13 +16,11 @@ export default function DeleteDocumentButton({
 }: DeleteDocumentButtonProps) {
   const router = useRouter();
   const [deleting, setDeleting] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const handleDelete = async () => {
-    if (!confirm(`Are you sure you want to delete "${filename}"?`)) {
-      return;
-    }
-
     setDeleting(true);
+    setShowConfirm(false);
     try {
       const res = await fetch(`/api/documents/${documentId}`, {
         method: "DELETE",
@@ -39,12 +39,24 @@ export default function DeleteDocumentButton({
   };
 
   return (
-    <button
-      onClick={handleDelete}
-      disabled={deleting}
-      className="rounded-md px-3 py-1.5 text-sm text-red-600 hover:bg-red-50 disabled:opacity-50"
-    >
-      {deleting ? "Deleting..." : "Delete"}
-    </button>
+    <>
+      <Button
+        variant="destructive"
+        size="sm"
+        onClick={() => setShowConfirm(true)}
+        disabled={deleting}
+      >
+        {deleting ? "Deleting..." : "Delete"}
+      </Button>
+      <ConfirmDialog
+        open={showConfirm}
+        onOpenChange={setShowConfirm}
+        title="Delete Document"
+        description={`Are you sure you want to delete "${filename}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        variant="destructive"
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }

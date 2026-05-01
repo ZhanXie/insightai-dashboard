@@ -1,53 +1,25 @@
-import { NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
+import { withApi } from "@/lib/http/handler";
+import { createUser } from "@/lib/auth/user-service";
+import { hashPassword } from "@/lib/auth/password";
 
 export async function POST(request: Request) {
-  try {
+  return withApi(async () => {
     const { email, password } = await request.json();
 
     if (!email || !password) {
-      return NextResponse.json(
-        { error: "Email and password are required" },
-        { status: 400 }
-      );
+      throw new Error("Email and password are required");
     }
 
     if (password.length < 6) {
-      return NextResponse.json(
-        { error: "Password must be at least 6 characters" },
-        { status: 400 }
-      );
+      throw new Error("Password must be at least 6 characters");
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
+    // Hash password before storing
+    const passwordHash = await hashPassword(password);
 
-    if (existingUser) {
-      return NextResponse.json(
-        { error: "Email already registered" },
-        { status: 409 }
-      );
-    }
+    // Create user using service layer
+    await createUser(email, passwordHash);
 
-    // Store password as plain text (no hashing)
-    await prisma.user.create({
-      data: {
-        email,
-        passwordHash: password,
-      },
-    });
-
-    return NextResponse.json(
-      { message: "User created successfully" },
-      { status: 201 }
-    );
-  } catch (error) {
-    console.error("Registration error:", error);
-    return NextResponse.json(
-      { error: "An error occurred during registration" },
-      { status: 500 }
-    );
-  }
+    return { message: "User created successfully" };
+  })(request);
 }

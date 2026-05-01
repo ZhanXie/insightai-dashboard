@@ -3,6 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { deleteChatSession } from "@/app/actions/chat-actions";
+import { Button } from "@/components/ui/button";
+import { Separator } from "@/components/ui/separator";
 
 interface Session {
   id: string;
@@ -41,7 +43,6 @@ export default function ChatSidebar({
     e.stopPropagation();
     if (!confirm("Delete this chat session?")) return;
     await deleteChatSession(sessionId);
-    // If deleting the current session, navigate to the base chat page
     if (sessionId === currentSessionId) {
       router.push("/dashboard/chat");
     } else {
@@ -64,29 +65,29 @@ export default function ChatSidebar({
   };
 
   return (
-    <div className="w-64 border-r border-gray-200 bg-white">
-      <div className="flex h-12 items-center justify-between border-b border-gray-200 px-3">
-        <span className="font-medium">Chat History</span>
-        <button
-          onClick={onNewChat}
-          className="rounded bg-blue-600 px-2 py-1 text-xs text-white hover:bg-blue-700"
-        >
+    <div className="w-64 border-r bg-background flex flex-col">
+      <div className="flex items-center justify-between p-3">
+        <span className="font-medium text-sm">Chat History</span>
+        <Button onClick={onNewChat} size="sm">
           + New
-        </button>
+        </Button>
       </div>
-      <div className="overflow-y-auto">
+      <Separator />
+      <div className="flex-1 overflow-y-auto">
         {sessions.length === 0 ? (
-          <div className="p-4 text-sm text-gray-500">No chat sessions yet</div>
+          <div className="p-4 text-sm text-muted-foreground">
+            No chat sessions yet
+          </div>
         ) : (
-          <ul className="divide-y divide-gray-100">
+          <ul className="divide-y">
             {sessions.map((session) => (
               <li key={session.id} className="group relative">
                 <Link
                   href={`/dashboard/chat/${session.id}`}
-                  className={`block px-4 py-3 text-sm hover:bg-gray-50 ${
+                  className={`block px-4 py-3 text-sm hover:bg-muted/50 transition-colors ${
                     session.id === currentSessionId
-                      ? "bg-blue-50 text-blue-700"
-                      : "text-gray-700"
+                      ? "bg-muted text-foreground font-medium"
+                      : "text-muted-foreground"
                   }`}
                 >
                   {isEditingTitle === session.id ? (
@@ -96,7 +97,7 @@ export default function ChatSidebar({
                         value={editingTitleValue}
                         onChange={(e) => onEditingTitleChange?.(e.target.value)}
                         onKeyDown={(e) => handleKeyDown(session.id, e)}
-                        className="flex-1 rounded border border-blue-300 px-1 py-0.5 text-sm focus:border-blue-500 focus:outline-none"
+                        className="flex-1 rounded border border-input bg-background px-1 py-0.5 text-sm focus:border-ring focus:outline-none"
                         autoFocus
                         onClick={(e) => e.stopPropagation()}
                       />
@@ -106,7 +107,7 @@ export default function ChatSidebar({
                           e.preventDefault();
                           onSaveTitle?.(session.id);
                         }}
-                        className="rounded bg-blue-600 px-1 py-0.5 text-xs text-white hover:bg-blue-700"
+                        className="rounded bg-primary px-1 py-0.5 text-xs text-primary-foreground hover:bg-primary/80"
                       >
                         ✓
                       </button>
@@ -116,7 +117,7 @@ export default function ChatSidebar({
                           e.preventDefault();
                           onCancelEdit?.();
                         }}
-                        className="rounded bg-gray-300 px-1 py-0.5 text-xs text-gray-700 hover:bg-gray-400"
+                        className="rounded bg-muted px-1 py-0.5 text-xs text-muted-foreground hover:bg-muted/80"
                       >
                         ✕
                       </button>
@@ -124,19 +125,20 @@ export default function ChatSidebar({
                   ) : (
                     <>
                       <p className="truncate pr-8">{session.title}</p>
-                      <p className="mt-1 text-xs text-gray-500">
+                      <p className="mt-1 text-xs text-muted-foreground">
                         {new Date(session.updatedAt).toLocaleDateString()}
                       </p>
                     </>
                   )}
                 </Link>
-                
-                {/* Edit and Delete buttons */}
+
                 {isEditingTitle !== session.id && (
-                  <div className="absolute right-2 top-3 flex gap-1">
+                  <div className="absolute right-2 top-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button
-                      onClick={(e) => handleEditClick(session.id, session.title, e)}
-                      className="rounded p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={(e) =>
+                        handleEditClick(session.id, session.title, e)
+                      }
+                      className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                       title="Edit title"
                     >
                       <svg
@@ -156,7 +158,7 @@ export default function ChatSidebar({
                     </button>
                     <button
                       onClick={(e) => handleDelete(session.id, e)}
-                      className="rounded p-1 text-red-400 hover:bg-red-50 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="rounded p-1 text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
                       title="Delete"
                     >
                       <svg

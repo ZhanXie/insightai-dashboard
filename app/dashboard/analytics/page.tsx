@@ -8,6 +8,7 @@ import {
   ChatActivityChart,
   FormatDistributionChart,
 } from "@/components/Charts";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
 export default async function AnalyticsPage() {
   const [documentsOverTime, chatActivity, formatDistribution] =
@@ -19,28 +20,35 @@ export default async function AnalyticsPage() {
 
   return (
     <div className="p-6">
-      <h1 className="mb-6 text-2xl font-bold">Analytics</h1>
+      <h1 className="mb-6 text-2xl font-bold text-foreground">Analytics</h1>
 
       <div className="grid gap-6 md:grid-cols-2">
-        {/* Documents Over Time */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold">Documents Over Time</h2>
-          <DocumentsOverTimeChart data={documentsOverTime} />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Documents Over Time</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <DocumentsOverTimeChart data={documentsOverTime} />
+          </CardContent>
+        </Card>
 
-        {/* Chat Activity */}
-        <div className="rounded-lg bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-semibold">Chat Activity (30 Days)</h2>
-          <ChatActivityChart data={chatActivity} />
-        </div>
+        <Card>
+          <CardHeader>
+            <CardTitle>Chat Activity (30 Days)</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ChatActivityChart data={chatActivity} />
+          </CardContent>
+        </Card>
 
-        {/* Format Distribution */}
-        <div className="rounded-lg bg-white p-6 shadow md:col-span-2">
-          <h2 className="mb-4 text-lg font-semibold">
-            Document Format Distribution
-          </h2>
-          <FormatDistributionChart data={formatDistribution} />
-        </div>
+        <Card className="md:col-span-2">
+          <CardHeader>
+            <CardTitle>Document Format Distribution</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FormatDistributionChart data={formatDistribution} />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

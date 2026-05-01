@@ -1,5 +1,8 @@
 import { auth } from "@/app/api/auth/[...nextauth]/auth";
 import { prisma } from "@/lib/prisma";
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import FileUpload from "@/components/FileUpload";
 import DeleteDocumentButton from "@/components/DeleteDocumentButton";
 
@@ -25,18 +28,13 @@ function formatFileSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-function getStatusBadge(status: string) {
-  const styles: Record<string, string> = {
-    ready: "bg-green-100 text-green-800",
-    processing: "bg-yellow-100 text-yellow-800",
-    error: "bg-red-100 text-red-800",
-    pending: "bg-gray-100 text-gray-800",
-  };
-  return (
-    <span className={`rounded-full px-2 py-1 text-xs font-medium ${styles[status] || styles.pending}`}>
-      {status}
-    </span>
-  );
+function getStatusVariant(status: string): "default" | "secondary" | "destructive" | "outline" {
+  switch (status) {
+    case "ready": return "default";
+    case "processing": return "secondary";
+    case "error": return "destructive";
+    default: return "outline";
+  }
 }
 
 export default async function DocumentsPage() {
@@ -48,49 +46,65 @@ export default async function DocumentsPage() {
   return (
     <div className="p-6">
       <div className="mb-6 flex items-center justify-between">
-        <h1 className="text-2xl font-bold">Documents</h1>
+        <h1 className="text-2xl font-bold text-foreground">Documents</h1>
       </div>
 
       {/* Upload Section */}
-      <div className="mb-8 rounded-lg bg-white p-6 shadow">
-        <h2 className="mb-4 text-lg font-semibold">Upload Document</h2>
-        <FileUpload />
-      </div>
+      <Card className="mb-8">
+        <CardHeader>
+          <CardTitle>Upload Document</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FileUpload />
+        </CardContent>
+      </Card>
 
       {/* Documents List */}
-      <div className="rounded-lg bg-white shadow">
-        <div className="border-b border-gray-200 px-6 py-4">
-          <h2 className="text-lg font-semibold">Your Documents</h2>
-        </div>
-
-        {documents.length === 0 ? (
-          <div className="px-6 py-12 text-center text-gray-500">
-            <p className="text-lg">No documents uploaded yet</p>
-            <p className="mt-1 text-sm">Upload your first document to start building your knowledge base.</p>
-          </div>
-        ) : (
-          <div className="divide-y divide-gray-200">
-            {documents.map((doc) => (
-              <div key={doc.id} className="flex items-center justify-between px-6 py-4">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="font-medium">{doc.filename}</span>
-                    {getStatusBadge(doc.status)}
+      <Card>
+        <CardHeader>
+          <CardTitle>Your Documents</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {documents.length === 0 ? (
+            <div className="py-12 text-center text-muted-foreground">
+              <p className="text-lg">No documents uploaded yet</p>
+              <p className="mt-1 text-sm">
+                Upload your first document to start building your knowledge base.
+              </p>
+            </div>
+          ) : (
+            <div className="divide-y">
+              {documents.map((doc) => (
+                <div
+                  key={doc.id}
+                  className="flex items-center justify-between py-4 first:pt-0 last:pb-0"
+                >
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-3">
+                      <span className="font-medium truncate">{doc.filename}</span>
+                      <Badge variant={getStatusVariant(doc.status)}>
+                        {doc.status}
+                      </Badge>
+                    </div>
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {formatFileSize(doc.fileSize)} &middot;{" "}
+                      {doc.mimeType.split("/").pop()?.toUpperCase()}
+                      {doc.chunkCount > 0 && ` \u00b7 ${doc.chunkCount} chunks`}
+                      &middot; {new Date(doc.createdAt).toLocaleDateString()}
+                    </div>
                   </div>
-                  <div className="mt-1 text-sm text-gray-500">
-                    {formatFileSize(doc.fileSize)} &middot; {doc.mimeType.split("/").pop()?.toUpperCase()}
-                    {doc.chunkCount > 0 && ` &middot; ${doc.chunkCount} chunks`}
-                    &middot; {new Date(doc.createdAt).toLocaleDateString()}
-                  </div>
+                  {doc.status === "ready" && (
+                    <DeleteDocumentButton
+                      documentId={doc.id}
+                      filename={doc.filename}
+                    />
+                  )}
                 </div>
-                {doc.status === "ready" && (
-                  <DeleteDocumentButton documentId={doc.id} filename={doc.filename} />
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -1,3 +1,5 @@
+import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+
 interface StatCardProps {
   label: string;
   value: number;
@@ -5,9 +7,15 @@ interface StatCardProps {
 
 export default function StatCard({ label, value }: StatCardProps) {
   return (
-    <div className="rounded-lg bg-white p-6 shadow">
-      <h2 className="text-sm font-medium text-gray-500">{label}</h2>
-      <p className="mt-2 text-3xl font-bold">{value}</p>
-    </div>
+    <Card>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium text-muted-foreground">
+          {label}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-3xl font-bold">{value}</p>
+      </CardContent>
+    </Card>
   );
 }
