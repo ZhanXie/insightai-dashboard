@@ -4,6 +4,7 @@ import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { Suspense } from "react";
+import { NavigationLink } from "@/components/ui/NavigationLink";
 
 export default async function DashboardLayout({
   children,
@@ -29,30 +30,18 @@ export default async function DashboardLayout({
               AI Dashboard
             </Link>
             <div className="flex gap-4">
-              <Link
-                href="/dashboard"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              <NavigationLink href="/dashboard">
                 Overview
-              </Link>
-              <Link
-                href="/dashboard/chat"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              </NavigationLink>
+              <NavigationLink href="/dashboard/chat">
                 Chat
-              </Link>
-              <Link
-                href="/dashboard/documents"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              </NavigationLink>
+              <NavigationLink href="/dashboard/documents">
                 Documents
-              </Link>
-              <Link
-                href="/dashboard/analytics"
-                className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
+              </NavigationLink>
+              <NavigationLink href="/dashboard/analytics">
                 Analytics
-              </Link>
+              </NavigationLink>
             </div>
           </div>
 
