@@ -27,6 +27,7 @@ interface ChatSidebarProps {
   onEditingTitleChange?: (value: string) => void;
   onSaveTitle?: (sessionId: string) => void;
   onCancelEdit?: () => void;
+  editingSessionId?: string | null;
 }
 
 export default function ChatSidebar({
@@ -39,10 +40,13 @@ export default function ChatSidebar({
   onEditingTitleChange,
   onSaveTitle,
   onCancelEdit,
+  editingSessionId,
 }: ChatSidebarProps) {
   const router = useRouter();
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState<string | null>(null);
+  const [deletingSessionId, setDeletingSessionId] = useState<string | null>(null);
+  const [savingSessionId, setSavingSessionId] = useState<string | null>(null);
 
   const handleDelete = async (sessionId: string, e: React.MouseEvent) => {
     e.preventDefault();
@@ -54,14 +58,21 @@ export default function ChatSidebar({
   const confirmDelete = async () => {
     if (!sessionToDelete) return;
 
-    await deleteChatSession(sessionToDelete);
-    if (sessionToDelete === currentSessionId) {
-      router.push("/dashboard/chat");
-    } else {
-      router.refresh();
+    setDeletingSessionId(sessionToDelete);
+    try {
+      await deleteChatSession(sessionToDelete);
+      if (sessionToDelete === currentSessionId) {
+        router.push("/dashboard/chat");
+      } else {
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to delete session:", error);
+    } finally {
+      setSessionToDelete(null);
+      setDeleteConfirmOpen(false);
+      setDeletingSessionId(null);
     }
-    setSessionToDelete(null);
-    setDeleteConfirmOpen(false);
   };
 
   const handleEditClick = (sessionId: string, title: string, e: React.MouseEvent) => {
@@ -121,8 +132,13 @@ export default function ChatSidebar({
                           e.preventDefault();
                           onSaveTitle?.(session.id);
                         }}
+                        disabled={savingSessionId === session.id}
                       >
-                        ✓
+                        {savingSessionId === session.id ? (
+                          <div className="h-3 w-3 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                        ) : (
+                          "✓"
+                        )}
                       </Button>
                       <Button
                         variant="outline"
@@ -163,8 +179,13 @@ export default function ChatSidebar({
                       size="icon-sm"
                       onClick={(e) => handleDelete(session.id, e)}
                       title="Delete"
+                      disabled={deletingSessionId === session.id}
                     >
-                      <X className="h-4 w-4" />
+                      {deletingSessionId === session.id ? (
+                        <div className="h-4 w-4 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                      ) : (
+                        <X className="h-4 w-4" />
+                      )}
                     </Button>
                   </div>
                 )}

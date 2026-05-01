@@ -41,6 +41,7 @@ export default function ChatClient({
   );
   const [isEditingTitle, setIsEditingTitle] = useState<string | null>(null);
   const [editingTitleValue, setEditingTitleValue] = useState("");
+  const [editingSessionId, setEditingSessionId] = useState<string | null>(null);
 
   const initialMessages = useMemo(
     () =>
@@ -102,6 +103,7 @@ export default function ChatClient({
       editingTitleValue !==
         sessions.find((s) => s.id === sessionId)?.title
     ) {
+      setEditingSessionId(sessionId);
       try {
         await updateChatSessionTitle(sessionId, editingTitleValue.trim());
         setSessions(
@@ -113,6 +115,8 @@ export default function ChatClient({
         );
       } catch (e) {
         console.error("Failed to update title", e);
+      } finally {
+        setEditingSessionId(null);
       }
     }
     setIsEditingTitle(null);
@@ -154,6 +158,7 @@ export default function ChatClient({
         onEditingTitleChange={setEditingTitleValue}
         onSaveTitle={handleSaveTitle}
         onCancelEdit={handleCancelEdit}
+        editingSessionId={editingSessionId}
       />
 
       <div className="flex flex-1 flex-col">

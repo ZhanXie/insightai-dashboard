@@ -6,6 +6,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import FileUpload from "@/components/FileUpload";
 import DeleteDocumentButton from "@/components/DeleteDocumentButton";
+import { Loader2, FileText, CheckCircle, AlertCircle } from "lucide-react";
 
 interface Document {
   id: string;
