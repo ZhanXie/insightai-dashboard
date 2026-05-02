@@ -31,36 +31,8 @@ const nextConfig: NextConfig = {
     },
   },
 
-  // Webpack config for better tree shaking
-  webpack: (config, { isServer }) => {
-    if (!isServer) {
-      // Optimize chunk splitting for client bundle
-      config.optimization = {
-        ...config.optimization,
-        splitChunks: {
-          ...config.optimization.splitChunks,
-          cacheGroups: {
-            ...config.optimization.splitChunks?.cacheGroups,
-            // Separate vendor chunks
-            vendor: {
-              test: /[\\/]node_modules[\\/]/,
-              name: "vendors",
-              chunks: "all",
-              priority: 10,
-            },
-            // Separate large libraries
-            recharts: {
-              test: /[\\/]node_modules[\\/](recharts|d3-.*)[\\/]/,
-              name: "recharts",
-              chunks: "all",
-              priority: 20,
-            },
-          },
-        },
-      };
-    }
-    return config;
-  },
+  // Turbopack configuration (Next.js 16+)
+  turbopack: {},
 
   // Headers for better caching
   async headers() {
