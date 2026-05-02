@@ -1,29 +1,7 @@
 {
   "permissions": {
     "allow": [
-      "Bash(openspec *)",
-      "Bash(mkdir *)",
-      "Bash(jq *)",
-      "Bash(npm install *)",
-      "Bash(node *)",
-      "Bash(npx *)",
-      "Bash(rm *)",
-      "Bash(npm run *)",
-      "Bash(mv *)",
-      "Bash(ls *)",
-      "Bash(docker-compose *)",
-      "Bash(docker compose up *)",
-      "Bash(openssl *)",
-      "Bash(docker compose down)",
-      "Bash(docker volume *)",
-      "Bash(sleep *)",
-      "Bash(docker exec *)",
-      "Bash(curl *)",
-      "Bash(lsof *)",
-      "WebFetch(nextjs.org)",
-      "Bash(docker ps *)",
-      "Bash(echo *)"
+      "Bash(docker compose exec *)"
     ]
-  },
-  "$version": 3
+  }
 }
