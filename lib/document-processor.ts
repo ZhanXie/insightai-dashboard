@@ -46,13 +46,214 @@ async function extractFromDocx(buffer: Buffer): Promise<string> {
 }
 
 /**
- * Split text into overlapping chunks of 500-1000 tokens.
- * Uses ~4 chars per token estimate, with 100 token (~400 chars) overlap.
+ * Configuration for chunking
+ */
+export interface ChunkingConfig {
+  /** Maximum chunk size in characters (~4 chars per token) */
+  maxChunkSize: number;
+  /** Overlap between chunks in characters */
+  overlap: number;
+  /** Enable Markdown header-aware chunking */
+  respectMarkdown: boolean;
+  /** Minimum chunk size - very small chunks will be merged */
+  minChunkSize: number;
+}
+
+export const DEFAULT_CHUNKING_CONFIG: ChunkingConfig = {
+  maxChunkSize: 1500,  // ~1500 chars ≈ 400 tokens, increased for better context
+  overlap: 300,         // ~300 chars overlap for continuity
+  respectMarkdown: true,
+  minChunkSize: 200,   // Minimum ~50 tokens per chunk
+};
+
+/**
+ * Check if a line is a Markdown header
+ */
+function isMarkdownHeader(line: string): { level: number; text: string } | null {
+  const match = line.match(/^(#{1,6})\s+(.+)$/);
+  if (match) {
+    return {
+      level: match[1].length,
+      text: match[2].trim(),
+    };
+  }
+  return null;
+}
+
+/**
+ * Split text into semantically meaningful chunks.
+ * Improved version with:
+ * - Markdown header awareness (preserves document structure)
+ * - Larger chunks for better context
+ * - Better Chinese text handling
  */
 export function chunkText(
   text: string,
-  maxChunkSize: number = 800, // ~800 chars ≈ 200 tokens, conservative estimate
-  overlap: number = 400 // ~400 chars ≈ 100 tokens overlap
+  maxChunkSize: number = DEFAULT_CHUNKING_CONFIG.maxChunkSize,
+  overlap: number = DEFAULT_CHUNKING_CONFIG.overlap,
+  respectMarkdown: boolean = DEFAULT_CHUNKING_CONFIG.respectMarkdown
+): { content: string; position: number; heading?: string }[] {
+  const chunks: { content: string; position: number; heading?: string }[] = [];
+
+  if (!text.trim()) {
+    return chunks;
+  }
+
+  // If Markdown-aware chunking is enabled, process accordingly
+  if (respectMarkdown) {
+    return chunkTextWithMarkdown(text, maxChunkSize, overlap);
+  }
+
+  // Fallback to paragraph-based chunking
+  return chunkTextByParagraphs(text, maxChunkSize, overlap);
+}
+
+/**
+ * Markdown-aware chunking that respects document structure
+ */
+function chunkTextWithMarkdown(
+  text: string,
+  maxChunkSize: number,
+  overlap: number
+): { content: string; position: number; heading?: string }[] {
+  const chunks: { content: string; position: number; heading?: string }[] = [];
+  const lines = text.split("\n");
+
+  let currentChunk = "";
+  let currentHeading = "";
+  let position = 0;
+
+  // Track the current section heading for context
+  const headingStack: string[] = [];
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+
+    // Check if this is a Markdown header
+    const headerMatch = isMarkdownHeader(line);
+    if (headerMatch) {
+      // Update heading stack (keep only parent headings)
+      while (headingStack.length >= headerMatch.level) {
+        headingStack.pop();
+      }
+      headingStack.push(headerMatch.text);
+      currentHeading = headingStack.join(" > ");
+    }
+
+    const trimmedLine = line.trim();
+
+    // Skip empty lines but preserve paragraph breaks
+    if (!trimmedLine) {
+      if (currentChunk.trim()) {
+        currentChunk += "\n\n";
+      }
+      continue;
+    }
+
+    // Check if adding this line would exceed max chunk size
+    const projectedChunk = currentChunk
+      ? currentChunk + "\n\n" + trimmedLine
+      : trimmedLine;
+
+    if (projectedChunk.length > maxChunkSize) {
+      // Push current chunk if it has content
+      if (currentChunk.trim()) {
+        chunks.push({
+          content: currentChunk.trim(),
+          position: position++,
+          heading: currentHeading || undefined,
+        });
+      }
+
+      // Create overlap from the end of current chunk
+      if (currentChunk.length > overlap && overlap > 0) {
+        const overlapText = currentChunk.slice(-overlap);
+        currentChunk = overlapText + "\n\n" + trimmedLine;
+      } else {
+        currentChunk = trimmedLine;
+      }
+    } else {
+      currentChunk = projectedChunk;
+    }
+
+    // Also handle extremely long single lines (force split)
+    if (trimmedLine.length > maxChunkSize * 1.5) {
+      // Force split long lines
+      if (currentChunk.trim() && currentChunk !== trimmedLine) {
+        chunks.push({
+          content: currentChunk.trim(),
+          position: position++,
+          heading: currentHeading || undefined,
+        });
+        currentChunk = "";
+      }
+
+      // Split by sentences for Chinese and English
+      const sentences = splitBySentences(trimmedLine);
+      let tempChunk = "";
+
+      for (const sentence of sentences) {
+        if ((tempChunk + " " + sentence).length > maxChunkSize) {
+          if (tempChunk.trim()) {
+            chunks.push({
+              content: tempChunk.trim(),
+              position: position++,
+              heading: currentHeading || undefined,
+            });
+          }
+          tempChunk = sentence;
+        } else {
+          tempChunk = tempChunk ? tempChunk + " " + sentence : sentence;
+        }
+      }
+
+      currentChunk = tempChunk;
+    }
+  }
+
+  // Don't forget the last chunk
+  if (currentChunk.trim()) {
+    chunks.push({
+      content: currentChunk.trim(),
+      position: position,
+      heading: currentHeading || undefined,
+    });
+  }
+
+  // Post-process: merge very small chunks with previous ones
+  return mergeSmallChunks(chunks, DEFAULT_CHUNKING_CONFIG.minChunkSize);
+}
+
+/**
+ * Split text by sentences, better support for Chinese
+ */
+function splitBySentences(text: string): string[] {
+  // Chinese sentence delimiters: 。！？； followed by space or end
+  // English: . ! ? followed by space or end
+  const chinesePattern = /[。！？；](?=\s|$)/;
+  const englishPattern = /[.!?](?=\s|$)/;
+
+  // Try Chinese first
+  if (chinesePattern.test(text)) {
+    return text.split(chinesePattern).map((s) => s.trim()).filter(Boolean);
+  }
+
+  // Fall back to English
+  if (englishPattern.test(text)) {
+    return text.split(englishPattern).map((s) => s.trim()).filter(Boolean);
+  }
+
+  // No clear sentence boundaries, return as single segment
+  return [text];
+}
+
+/**
+ * Paragraph-based chunking (fallback)
+ */
+function chunkTextByParagraphs(
+  text: string,
+  maxChunkSize: number,
+  overlap: number
 ): { content: string; position: number }[] {
   const chunks: { content: string; position: number }[] = [];
 
@@ -60,7 +261,7 @@ export function chunkText(
     return chunks;
   }
 
-  // Try to split by paragraphs first for better semantic boundaries
+  // Split by paragraphs (double newlines or single with significant content)
   const paragraphs = text.split(/\n\s*\n/).filter((p) => p.trim());
 
   let currentChunk = "";
@@ -81,7 +282,7 @@ export function chunkText(
       }
 
       // Split large paragraph by sentences
-      const sentences = trimmedParagraph.split(/(?<=[.!?])\s+/);
+      const sentences = splitBySentences(trimmedParagraph);
       for (const sentence of sentences) {
         if (sentence.length > maxChunkSize) {
           // Force split long sentences
@@ -135,4 +336,41 @@ export function chunkText(
   }
 
   return chunks;
+}
+
+/**
+ * Merge small chunks with previous ones to avoid tiny fragments
+ */
+function mergeSmallChunks(
+  chunks: { content: string; position: number; heading?: string }[],
+  minSize: number
+): { content: string; position: number; heading?: string }[] {
+  if (chunks.length <= 1) return chunks;
+
+  const result: { content: string; position: number; heading?: string }[] = [];
+  let current = { ...chunks[0] };
+
+  for (let i = 1; i < chunks.length; i++) {
+    const chunk = chunks[i];
+
+    // If current chunk is too small, merge with next
+    if (current.content.length < minSize && i < chunks.length) {
+      current.content += "\n\n" + chunk.content;
+      // Keep the heading of the larger chunk
+      if (chunk.content.length > current.content.length / 2) {
+        current.heading = chunk.heading;
+      }
+    } else {
+      result.push(current);
+      current = { ...chunk };
+    }
+  }
+
+  // Don't forget the last chunk
+  if (current.content) {
+    result.push(current);
+  }
+
+  // Re-number positions
+  return result.map((c, idx) => ({ ...c, position: idx }));
 }

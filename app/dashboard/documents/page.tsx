@@ -2,6 +2,9 @@ import { auth } from "@/app/api/auth/[...nextauth]/auth";
 import { prisma } from "@/lib/prisma";
 import DocumentsClient from "./DocumentsClient";
 
+// Cache documents list for 30 seconds
+export const revalidate = 30;
+
 async function getDocuments(userId: string) {
   return prisma.document.findMany({
     where: { userId },

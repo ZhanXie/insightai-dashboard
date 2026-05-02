@@ -8,11 +8,14 @@ import { streamText } from "ai";
 
 export const POST = withAuth(async (req, context) => {
   const { userId } = context;
-  const { messages, sessionId: requestSessionId } = await req.json();
+  const { messages, sessionId: requestSessionId, documentIds } = await req.json();
 
   if (!messages || messages.length === 0) {
     return Response.json({ error: "No messages provided" }, { status: 400 });
   }
+
+  // Extract previous messages (all except the last user message)
+  const previousMessages = messages.slice(0, -1);
 
   const lastUserMessage = messages[messages.length - 1].content;
 
@@ -36,8 +39,13 @@ export const POST = withAuth(async (req, context) => {
   // Save user message
   await saveMessage(sessionId, "user", lastUserMessage);
 
-  // Build system prompt with RAG context
-  const systemPrompt = await buildSystemPrompt(userId, lastUserMessage);
+  // Build system prompt with RAG context (with document scoping and query rewrite)
+  const systemPrompt = await buildSystemPrompt(userId, lastUserMessage, {
+    documentIds,
+    useHybridSearch: true,
+    useQueryRewrite: true,
+    previousMessages,
+  });
 
   // Build AI messages and apply token window truncation
   const fullMessages = buildAiMessages(systemPrompt, messages);
