@@ -25,6 +25,7 @@ export interface SearchResultChunk {
   position: number;
   documentFilename: string;
   score?: number;
+  heading?: string;
 }
 
 /**

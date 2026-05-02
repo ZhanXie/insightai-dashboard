@@ -124,6 +124,49 @@ insightai-dashboard/
 └── public/                # Static assets
 ```
 
+## 🧠 RAG System Architecture
+
+The RAG (Retrieval-Augmented Generation) system enables AI-powered chat with your documents.
+
+### How It Works
+
+```
+User Query → Query Rewrite → Hybrid Search → Context Building → LLM Response
+                   ↓              ↓               ↓
+            LLM Enhancement   Vector + BM25   Ranking & Filter
+```
+
+### Key Features
+
+- **Hybrid Search**: Combines vector similarity (pgvector) with BM25 keyword search
+- **Dynamic Top-K**: Adjusts retrieval count based on query complexity
+- **MMR Reranking**: Maximal Marginal Relevance for diverse results
+- **Markdown-aware Chunking**: Preserves document structure with header awareness
+- **Query Rewrite**: Uses LLM to expand short/vague queries with conversation history
+- **Multi-doc Synthesis**: Detects cross-document questions and synthesizes information
+
+### Document Processing Pipeline
+
+```
+Upload → Text Extraction → Chunking → Embedding → Vector Storage
+         (PDF/DOCX/TXT)   (800-1500 chars) (text-embedding-v4) (pgvector)
+```
+
+### Search Pipeline
+
+```
+Query → Embedding → Vector Search → Keyword Search → RRF Fusion → MMR → Context
+                  ↓                                    ↓
+            top-K results                      Reciprocal Rank Fusion
+```
+
+### Configuration
+
+The system automatically optimizes retrieval based on:
+- Query length and complexity
+- Number of available documents
+- Conversation context
+
 ## 🛠️ Technology Stack
 
 - **Framework**: Next.js 16+ (App Router)
