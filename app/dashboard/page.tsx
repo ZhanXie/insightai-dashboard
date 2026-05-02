@@ -3,6 +3,9 @@ import StatCard from "@/components/StatCard";
 import { Button } from "@/components/ui/button";
 import { AlertCircle, RefreshCw } from "lucide-react";
 
+// Cache dashboard data for 60 seconds
+export const revalidate = 60;
+
 export default async function DashboardPage() {
   const stats = await getDashboardStats();
 

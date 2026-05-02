@@ -2,6 +2,9 @@ import { requireAuth } from "@/lib/auth-guard";
 import { getChatSessions } from "@/app/actions/chat-actions";
 import ChatClient from "./ChatClient";
 
+// Cache sessions for 10 seconds (chat is dynamic)
+export const revalidate = 10;
+
 export default async function ChatPage() {
   const guard = await requireAuth();
   if ("response" in guard) return null;

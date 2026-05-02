@@ -3,6 +3,9 @@ import { notFound } from "next/navigation";
 import { getChatSessions, getChatSessionMessages } from "@/app/actions/chat-actions";
 import ChatClient from "../ChatClient";
 
+// Cache for 5 seconds (session data is very dynamic)
+export const revalidate = 5;
+
 export default async function ChatSessionPage({
   params,
 }: {

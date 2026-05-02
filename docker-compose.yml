@@ -3,6 +3,7 @@ services:
   postgres:
     image: pgvector/pgvector:pg15
     container_name: insightai-postgres
+    restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
@@ -11,11 +12,40 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    command:
+      - "postgres"
+      # Performance tuning: shared buffer, work mem, etc.
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=512MB"
+      - "-c"
+      - "work_mem=16MB"
+      - "-c"
+      - "maintenance_work_mem=128MB"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "min_wal_size=1GB"
+      - "-c"
+      - "max_wal_size=4GB"
+      # Enable pg_trgm for similarity search
+      - "-c"
+      - "shared_preload_libraries=pg_trgm"
+    deploy:
+      resources:
+        limits:
+          # Memory limit - adjust based on available system memory
+          memory: 1G
+        reservations:
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 10s
 
 volumes:
   postgres_data:
+    driver: local

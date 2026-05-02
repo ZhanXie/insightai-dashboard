@@ -10,6 +10,9 @@ import {
 } from "@/components/Charts";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 
+// Cache analytics data for 2 minutes
+export const revalidate = 120;
+
 export default async function AnalyticsPage() {
   const [documentsOverTime, chatActivity, formatDistribution] =
     await Promise.all([
