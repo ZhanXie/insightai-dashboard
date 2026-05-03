@@ -42,6 +42,9 @@ export default async function DashboardLayout({
               <NavigationLink href="/dashboard/analytics">
                 Analytics
               </NavigationLink>
+              <NavigationLink href="/dashboard/video-transcript">
+                Video
+              </NavigationLink>
             </div>
           </div>
 
