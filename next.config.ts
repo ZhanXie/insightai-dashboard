@@ -24,6 +24,9 @@ const nextConfig: NextConfig = {
     ],
   },
 
+  // External packages that should not be bundled by webpack (server-side only)
+  serverExternalPackages: ["qiniu"],
+
   // Reduce bundle size by splitting chunks
   modularizeImports: {
     "@base-ui/react": {

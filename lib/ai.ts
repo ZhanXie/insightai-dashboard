@@ -4,7 +4,7 @@ import {
   OPENAI_COMPATIBLE_BASE_URL,
   OPENAI_COMPATIBLE_API_KEY,
   OPENAI_CHAT_MODEL,
-  OPENAI_EMBEDDING_MODEL
+  OPENAI_EMBEDDING_MODEL,
 } from "@/lib/env";
 
 // OpenAI-compatible API provider
@@ -16,5 +16,5 @@ const aiProvider = createOpenAI({
 // Chat model
 export const chatModel = aiProvider(OPENAI_CHAT_MODEL);
 
-// Embedding model (separate from chat model)
+// Embedding model
 export const embeddingModel = aiProvider.embedding(OPENAI_EMBEDDING_MODEL);

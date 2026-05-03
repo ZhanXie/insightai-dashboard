@@ -17,8 +17,9 @@ model User {
   email         String    @unique
   passwordHash  String    @map("password_hash")
   createdAt     DateTime  @default(now()) @map("created_at")
-  documents     Document[]
-  chatSessions  ChatSession[]
+  documents         Document[]
+  chatSessions      ChatSession[]
+  videoTranscripts  VideoTranscript[]
 
   @@map("users")
 }
@@ -80,4 +81,26 @@ model Message {
   @@index([sessionId])
   @@index([createdAt(sort: Asc)])
   @@map("messages")
+}
+
+// ─── VideoTranscript ────────────────────────────────────────────────
+model VideoTranscript {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  filename    String
+  fileSize    Int      @map("file_size")
+  mimeType    String   @map("mime_type")
+  duration    Float?                        // video duration in seconds
+  status      String   @default("pending")  // pending | processing | completed | error
+  error       String?                       // error message
+  videoKey    String?  @map("video_key")    // Qiniu object key for video
+  audioKey    String?  @map("audio_key")    // Qiniu object key for audio
+  transcript  Json?                         // [{start, end, text}, ...]
+  rawText     String?                       // plain text (joined segments)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@map("video_transcripts")
 }
