@@ -96,6 +96,7 @@ model VideoTranscript {
   error       String?                       // error message
   videoKey    String?  @map("video_key")    // Qiniu object key for video
   audioKey    String?  @map("audio_key")    // Qiniu object key for audio
+  coverKey    String?  @map("cover_image_key") // Qiniu object key for cover image
   transcript  Json?                         // [{start, end, text}, ...]
   rawText     String?                       // plain text (joined segments)
   createdAt   DateTime @default(now()) @map("created_at")

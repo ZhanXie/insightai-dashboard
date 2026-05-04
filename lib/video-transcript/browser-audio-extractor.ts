@@ -11,7 +11,7 @@ let ffmpegLoaded = false;
  * Get or initialize the FFmpeg WASM instance.
  * Loads the core (~28MB) on first call — subsequent calls use cache.
  */
-async function getFFmpeg(): Promise<FFmpeg> {
+export async function getFFmpeg(): Promise<FFmpeg> {
   if (!ffmpeg) {
     ffmpeg = new FFmpeg();
   }

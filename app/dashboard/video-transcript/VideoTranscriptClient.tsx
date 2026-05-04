@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/ConfirmDialog";
 import VideoUploader from "@/components/VideoUploader";
 import TranscriptViewer from "@/components/TranscriptViewer";
+import { Progress, ProgressTrack, ProgressIndicator } from "@/components/ui/progress";
 import { useToast } from "@/components/ui/ToastProvider";
 import {
   Loader2,
@@ -35,6 +36,7 @@ export interface TranscriptRecord {
   duration?: number | null;
   audioUrl?: string | null;
   videoUrl?: string | null;
+  coverUrl?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +46,7 @@ export interface TranscriptDetail extends TranscriptRecord {
   rawText?: string | null;
   videoKey?: string | null;
   audioKey?: string | null;
+  coverKey?: string | null;
 }
 
 interface VideoTranscriptClientProps {
@@ -71,6 +74,8 @@ export default function VideoTranscriptClient({
   const [deleting, setDeleting] = useState(false);
   const [transcribingId, setTranscribingId] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [coverZoomUrl, setCoverZoomUrl] = useState<string | null>(null);
+  const [processingProgress, setProcessingProgress] = useState<Record<string, number>>({});
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const handleRefresh = useCallback(() => {
@@ -84,10 +89,14 @@ export default function VideoTranscriptClient({
     if (pollingRef.current) clearInterval(pollingRef.current);
 
     let pollCount = 0;
-    const MAX_POLLS = 12; // 60 seconds max
+    const MAX_POLLS = 30; // 150 seconds max (5s * 30)
 
     pollingRef.current = setInterval(async () => {
       pollCount += 1;
+
+      // Estimate progress based on poll count (cap at 95% until completed)
+      const estimatedProgress = Math.min(Math.round((pollCount / MAX_POLLS) * 100), 95);
+      setProcessingProgress((prev) => ({ ...prev, [id]: estimatedProgress }));
 
       try {
         const res = await fetch(`/api/video-transcript/${id}`);
@@ -109,8 +118,14 @@ export default function VideoTranscriptClient({
           setTranscribingId(null);
 
           if (data.status === "completed") {
+            setProcessingProgress((prev) => ({ ...prev, [id]: 100 }));
             addToast("Transcription completed!", "success");
           } else if (data.status === "error") {
+            setProcessingProgress((prev) => {
+              const next = { ...prev };
+              delete next[id];
+              return next;
+            });
             addToast(`Transcription failed: ${data.error || "Unknown error"}`, "destructive");
           }
         }
@@ -123,6 +138,11 @@ export default function VideoTranscriptClient({
         if (pollingRef.current) clearInterval(pollingRef.current);
         pollingRef.current = null;
         setTranscribingId(null);
+        setProcessingProgress((prev) => {
+          const next = { ...prev };
+          delete next[id];
+          return next;
+        });
         addToast("Polling timeout — refresh manually to check status", "default");
       }
     }, 5000);
@@ -266,9 +286,9 @@ export default function VideoTranscriptClient({
         };
       case "processing":
         return {
-          icon: <Loader className="h-4 w-4 text-blue-500 animate-spin" />,
-          label: "Processing",
-          badge: "bg-blue-50 text-blue-600 border-blue-200",
+          icon: null,
+          label: "",
+          badge: "",
         };
       case "error":
         return {
@@ -353,9 +373,23 @@ export default function VideoTranscriptClient({
                     }`}
                   >
                     <div className="flex items-center gap-4 p-4">
-                      {/* File icon */}
-                      <div className="shrink-0 w-10 h-10 rounded-lg bg-primary/5 flex items-center justify-center">
-                        <FileVideo className="h-5 w-5 text-primary/60" />
+                      {/* Cover image or file icon */}
+                      <div className="shrink-0 w-14 h-10 rounded-md overflow-hidden bg-primary/5 flex items-center justify-center">
+                        {t.coverUrl ? (
+                          <img
+                            src={t.coverUrl}
+                            alt={t.filename}
+                            className="w-full h-full object-cover cursor-pointer hover:opacity-80 transition-opacity"
+                            onClick={() => setCoverZoomUrl(t.coverUrl!)}
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).style.display = "none";
+                              const parent = (e.target as HTMLImageElement).parentElement;
+                              if (parent) parent.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="h-5 w-5 text-primary/60"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>';
+                            }}
+                          />
+                        ) : (
+                          <FileVideo className="h-5 w-5 text-primary/60" />
+                        )}
                       </div>
 
                       {/* Main content */}
@@ -367,10 +401,12 @@ export default function VideoTranscriptClient({
                           <span className="font-medium text-sm truncate">
                             {t.filename}
                           </span>
-                          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${statusConfig.badge}`}>
-                            {statusConfig.icon}
-                            {statusConfig.label}
-                          </span>
+                          {t.status !== "processing" && (
+                            <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${statusConfig.badge}`}>
+                              {statusConfig.icon}
+                              {statusConfig.label}
+                            </span>
+                          )}
                         </div>
 
                         {/* Metadata */}
@@ -446,12 +482,19 @@ export default function VideoTranscriptClient({
                           </Button>
                         )}
 
-                        {/* Processing indicator */}
+                        {/* Processing indicator with progress bar */}
                         {t.status === "processing" && (
-                          <span className="inline-flex items-center gap-1.5 text-xs text-blue-600">
-                            <Loader className="h-3.5 w-3.5 animate-spin" />
-                            Processing...
-                          </span>
+                          <div className="flex items-center gap-2 w-48">
+                            <Loader className="h-3.5 w-3.5 animate-spin text-blue-500 shrink-0" />
+                            <Progress value={processingProgress[t.id] || 0} className="flex-1 h-2">
+                              <ProgressTrack>
+                                <ProgressIndicator className="bg-blue-500" />
+                              </ProgressTrack>
+                            </Progress>
+                            <span className="text-xs text-blue-600 tabular-nums min-w-[32px]">
+                              {processingProgress[t.id] || 0}%
+                            </span>
+                          </div>
                         )}
 
                         {/* View transcript button */}
@@ -588,6 +631,35 @@ export default function VideoTranscriptClient({
         variant="destructive"
         onConfirm={handleDelete}
       />
+
+      {/* Cover image zoom modal */}
+      {coverZoomUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm cursor-zoom-out"
+          onClick={() => setCoverZoomUrl(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Cover image preview"
+        >
+          <div className="relative max-w-4xl max-h-[90vh] m-4">
+            <button
+              className="absolute -top-3 -right-3 w-8 h-8 rounded-full bg-white text-gray-900 flex items-center justify-center hover:bg-gray-100 shadow-lg transition-colors"
+              onClick={() => setCoverZoomUrl(null)}
+              aria-label="Close preview"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </button>
+            <img
+              src={coverZoomUrl}
+              alt="Cover preview"
+              className="max-w-full max-h-[90vh] rounded-lg shadow-2xl object-contain"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

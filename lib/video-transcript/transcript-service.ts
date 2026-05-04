@@ -42,6 +42,7 @@ export interface CreateTranscriptParams {
   mimeType: string;
   videoKey: string;
   audioKey: string;
+  coverKey?: string;
 }
 
 // Step 1: Create the transcript record (status: "pending")
@@ -66,7 +67,7 @@ export async function createTranscript(
     "pending"
   );
 
-  await updateTranscriptKeys(record.id, params.videoKey, params.audioKey);
+  await updateTranscriptKeys(record.id, params.videoKey, params.audioKey, params.coverKey);
 
   // NOTE: Transcription is NOT started automatically.
   // User must trigger it manually via POST /api/video-transcript/[id]/transcribe
@@ -137,11 +138,20 @@ export async function getTranscript(transcriptId: string, userId: string) {
     ...record,
     audioUrl: record.audioKey ? provider.getPublicUrl(record.audioKey) : null,
     videoUrl: record.videoKey ? provider.getPublicUrl(record.videoKey) : null,
+    coverUrl: record.coverKey ? provider.getPublicUrl(record.coverKey) : null,
   };
 }
 
 export async function listUserTranscripts(userId: string) {
-  return listTranscripts(userId);
+  const records = await listTranscripts(userId);
+  const provider = getStorageProvider();
+
+  return records.map((record) => ({
+    ...record,
+    audioUrl: record.audioKey ? provider.getPublicUrl(record.audioKey) : null,
+    videoUrl: record.videoKey ? provider.getPublicUrl(record.videoKey) : null,
+    coverUrl: record.coverKey ? provider.getPublicUrl(record.coverKey) : null,
+  }));
 }
 
 export async function deleteTranscript(transcriptId: string, userId: string) {
@@ -168,6 +178,16 @@ export async function deleteTranscript(transcriptId: string, userId: string) {
       console.log(`[Storage] Deleted audio: ${record.audioKey}`);
     } catch (err) {
       console.warn(`[Storage] Failed to delete audio ${record.audioKey}:`, err);
+    }
+  }
+
+  // Delete cover image from Qiniu
+  if (record.coverKey) {
+    try {
+      await provider.deleteFile(record.coverKey);
+      console.log(`[Storage] Deleted cover: ${record.coverKey}`);
+    } catch (err) {
+      console.warn(`[Storage] Failed to delete cover ${record.coverKey}:`, err);
     }
   }
 

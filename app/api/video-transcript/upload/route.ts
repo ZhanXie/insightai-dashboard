@@ -12,12 +12,13 @@ const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
 export async function POST(request: Request) {
   return withAuth(async (req, { userId }) => {
     const body = await req.json();
-    const { filename, fileSize, mimeType, videoKey, audioKey } = body as {
+    const { filename, fileSize, mimeType, videoKey, audioKey, coverKey } = body as {
       filename?: string;
       fileSize?: number;
       mimeType?: string;
       videoKey?: string;
       audioKey?: string;
+      coverKey?: string;
     };
 
     // Validation
@@ -40,7 +41,10 @@ export async function POST(request: Request) {
       mimeType,
       videoKey,
       audioKey,
+      coverKey,
     });
+
+    console.log(`[Upload API] Transcript created: id=${result.id}, coverKey=${coverKey}`);
 
     const provider = getStorageProvider();
 
@@ -48,6 +52,7 @@ export async function POST(request: Request) {
       id: result.id,
       audioUrl: provider.getPublicUrl(audioKey),
       videoUrl: provider.getPublicUrl(videoKey),
+      coverUrl: coverKey ? provider.getPublicUrl(coverKey) : null,
     };
   })(request);
 }
