@@ -3,13 +3,26 @@
 // Server only generates the token + key path; the client uploads directly to Qiniu,
 // completely bypassing Next.js App Router body parsing and size limits.
 import { upload, region as qiniuRegion } from "qiniu-js";
+import { QINIU_UPLOAD_URL } from '../env'
 
 type QiniuRegion = (typeof qiniuRegion)[keyof typeof qiniuRegion];
 
 // Upload region — adjust based on your bucket's zone
 // z0=华东, z1=华北, z2=华南, na0=北美, as0=新加坡(东南亚), cn-east-2=华东2
-const UPLOAD_REGION: QiniuRegion = qiniuRegion.as0;
+// Maps to QINIU_UPLOAD_URL: https://up-z2.qiniup.com → z2, etc.
+function getUploadRegion(): QiniuRegion {
+  const uploadUrl = QINIU_UPLOAD_URL;
+  if (uploadUrl.includes("up-z0")) return qiniuRegion.z0;
+  if (uploadUrl.includes("up-z1")) return qiniuRegion.z1;
+  if (uploadUrl.includes("up-z2")) return qiniuRegion.z2;
+  if (uploadUrl.includes("up-na0")) return qiniuRegion.na0;
+  if (uploadUrl.includes("up-as0")) return qiniuRegion.as0;
+  if (uploadUrl.includes("up-cn-east-2")) return qiniuRegion.cnEast2;
+  // Default to Singapore (as0) for backward compatibility
+  return qiniuRegion.as0;
+}
 
+const UPLOAD_REGION = getUploadRegion();
 /**
  * Ensure the blob is a File (qiniu-js needs .name on the blob).
  */
