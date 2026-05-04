@@ -6,8 +6,8 @@ function assertEnv(
   condition?: boolean,
   message?: string
 ): string {
+  if (typeof window !== 'undefined') return '';
   const value = process.env[name];
-  
   if (value === undefined) {
     throw new Error(`Missing required environment variable: ${name}`);
   }
@@ -24,7 +24,7 @@ export const DATABASE_URL = assertEnv("DATABASE_URL");
 export const OPENAI_COMPATIBLE_BASE_URL = assertEnv("OPENAI_COMPATIBLE_BASE_URL");
 export const OPENAI_COMPATIBLE_API_KEY = assertEnv("OPENAI_COMPATIBLE_API_KEY");
 export const AUTH_SECRET = assertEnv("AUTH_SECRET", 
-  process.env.AUTH_SECRET!.length >= 16, 
+  (process.env.AUTH_SECRET?.length || 0)>= 16, 
   "AUTH_SECRET must be at least 16 characters"
 );
 
@@ -41,7 +41,7 @@ export const QINIU_ACCESS_KEY = process.env.QINIU_ACCESS_KEY || "";
 export const QINIU_SECRET_KEY = process.env.QINIU_SECRET_KEY || "";
 export const QINIU_BUCKET = process.env.QINIU_BUCKET || "";
 export const QINIU_DOMAIN = process.env.QINIU_DOMAIN || "";
-export const QINIU_UPLOAD_URL = process.env.QINIU_UPLOAD_URL || "https://up-z2.qiniup.com";
+export const QINIU_UPLOAD_URL = process.env.QINIU_UPLOAD_URL || "https://up-z0.qiniup.com";
 
 // App environment for storage path prefix (development | staging | production)
 export const APP_ENV = process.env.APP_ENV || process.env.NODE_ENV || "development";
