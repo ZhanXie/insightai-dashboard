@@ -2,14 +2,13 @@
 // Uses the official qiniu-js SDK (v3.x) for reliable multipart upload.
 // Server only generates the token + key path; the client uploads directly to Qiniu,
 // completely bypassing Next.js App Router body parsing and size limits.
-
 import { upload, region as qiniuRegion } from "qiniu-js";
 
 type QiniuRegion = (typeof qiniuRegion)[keyof typeof qiniuRegion];
 
 // Upload region — adjust based on your bucket's zone
 // z0=华东, z1=华北, z2=华南, na0=北美, as0=新加坡(东南亚), cn-east-2=华东2
-const UPLOAD_REGION: QiniuRegion = qiniuRegion.z0;
+const UPLOAD_REGION: QiniuRegion = qiniuRegion.as0;
 
 /**
  * Ensure the blob is a File (qiniu-js needs .name on the blob).
@@ -78,7 +77,11 @@ export function uploadToQiniu(
           onProgress?.(Math.round(pct));
         },
         error: (err) => {
-          reject(err instanceof Error ? err : new Error(String(err)));
+          const errorMsg =
+            err instanceof Error ? err.message :
+            typeof err === "object" && err !== null ? JSON.stringify(err) :
+            String(err);
+          reject(new Error(errorMsg));
         },
         complete: (res) => {
           resolve((res as { key?: string }).key || key);

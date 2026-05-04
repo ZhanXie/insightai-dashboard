@@ -188,12 +188,19 @@ export default function VideoUploader({
           onUploadComplete?.(data.id);
         }, 1500);
       } catch (err) {
-        const msg =
-          err instanceof Error ? err.message : "An unexpected error occurred";
+        let msg = "An unexpected error occurred";
+        if (err instanceof Error) {
+          msg = err.message;
+        } else if (typeof err === "object" && err !== null) {
+          // Extract message property if available, otherwise stringify
+          const obj = err as Record<string, unknown>;
+          msg = typeof obj.message === "string" ? obj.message : JSON.stringify(err);
+        } else {
+          msg = String(err);
+        }
         setError(msg);
         updateState("error", 0, msg);
         onUploadError?.(msg);
-        // 移除自动清除逻辑，报错信息将保留在界面上
       }
     },
     [validateFile, updateState, resetState, onUploadComplete, onUploadError]
