@@ -20,6 +20,7 @@ async function getTranscripts(userId: string) {
       duration: true,
       audioKey: true,
       videoKey: true,
+      coverKey: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -34,6 +35,7 @@ async function getTranscripts(userId: string) {
     updatedAt: r.updatedAt.toISOString(),
     audioUrl: r.audioKey ? provider.getPublicUrl(r.audioKey) : null,
     videoUrl: r.videoKey ? provider.getPublicUrl(r.videoKey) : null,
+    coverUrl: r.coverKey ? provider.getPublicUrl(r.coverKey) : null,
   }));
 }
 

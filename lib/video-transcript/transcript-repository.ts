@@ -42,12 +42,26 @@ export async function updateTranscriptStatus(
 export async function updateTranscriptKeys(
   id: string,
   videoKey: string,
-  audioKey: string
+  audioKey: string,
+  coverKey?: string
 ) {
-  return prisma.videoTranscript.update({
+  console.log(`[Repo] updateTranscriptKeys: id=${id}, videoKey=${videoKey}, audioKey=${audioKey}, coverKey=${coverKey}`);
+
+  const updateData: { videoKey: string; audioKey: string; coverKey?: string } = {
+    videoKey,
+    audioKey,
+  };
+  if (coverKey) {
+    updateData.coverKey = coverKey;
+  }
+
+  const result = await prisma.videoTranscript.update({
     where: { id },
-    data: { videoKey, audioKey },
+    data: updateData,
   });
+
+  console.log(`[Repo] updateTranscriptKeys result: videoKey=${result.videoKey}, audioKey=${result.audioKey}, coverKey=${result.coverKey}`);
+  return result;
 }
 
 // Update transcript with ASR result
@@ -88,6 +102,7 @@ export async function getTranscriptForUser(
       rawText: true,
       videoKey: true,
       audioKey: true,
+      coverKey: true,
       createdAt: true,
       updatedAt: true,
     },
@@ -122,6 +137,9 @@ export async function listTranscripts(userId: string) {
       status: true,
       error: true,
       duration: true,
+      videoKey: true,
+      audioKey: true,
+      coverKey: true,
       createdAt: true,
       updatedAt: true,
     },

@@ -26,13 +26,17 @@ function toFile(blob: Blob, filename: string): File {
  * @param fileType - "video" or "audio"
  * @param extension - File extension (e.g. "mp4", "wav")
  * @param onProgress - Optional upload progress callback (0-100)
+ * @param filename - Original filename for grouping files under the same directory
+ * @param uploadId - Shared ID for all files from the same upload batch
  * @returns The Qiniu key assigned by the server
  */
 export function uploadToQiniu(
   blob: Blob,
   fileType: string,
   extension: string,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
+  filename?: string,
+  uploadId?: string
 ): Promise<string> {
   return new Promise(async (resolve, reject) => {
     try {
@@ -40,7 +44,7 @@ export function uploadToQiniu(
       const tokenRes = await fetch("/api/qiniu-token", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fileType, extension }),
+        body: JSON.stringify({ fileType, extension, filename, uploadId }),
       });
 
       if (!tokenRes.ok) {
@@ -55,8 +59,8 @@ export function uploadToQiniu(
       };
 
       // 2. Convert Blob → File if needed (qiniu-js needs .name)
-      const filename = `${fileType}.${extension}`;
-      const file = toFile(blob, filename);
+      const internalFilename = `${fileType}.${extension}`;
+      const file = toFile(blob, internalFilename);
 
       // 3. Upload directly to Qiniu via qiniu-js
       const config = {

@@ -2,7 +2,8 @@
 
 import { useState, useCallback, useRef } from "react";
 import { UploadIcon, Film, Loader2, CheckCircle2, AlertCircle } from "lucide-react";
-import { extractAudioFromVideo } from "@/lib/video-transcript/browser-audio-extractor";
+import { extractAudioFromVideo, getFFmpeg } from "@/lib/video-transcript/browser-audio-extractor";
+import { fetchFile } from "@ffmpeg/util";
 import { uploadToQiniu } from "@/lib/storage/client-upload";
 
 const MAX_FILE_SIZE = 500 * 1024 * 1024; // 500MB
@@ -95,15 +96,37 @@ export default function VideoUploader({
           }
         });
 
+        // Phase 1.5: Extract cover image (first frame)
+        updateState("extracting", 0, "Extracting cover image...");
+        const ffmpegInstance = await getFFmpeg();
+        ffmpegInstance.writeFile("cover_input", await fetchFile(file));
+        await ffmpegInstance.exec([
+          "-y",
+          "-i", "cover_input",
+          "-vframes", "1",
+          "-f", "image2",
+          "-c:v", "png",
+          "cover.png"
+        ]);
+        const coverData = (await ffmpegInstance.readFile("cover.png")) as Uint8Array;
+        ffmpegInstance.deleteFile("cover_input");
+        ffmpegInstance.deleteFile("cover.png");
+        const coverBlob = new Blob([new Uint8Array(coverData)], { type: "image/png" });
+
         // Phase 2: Upload video via server proxy (raw binary, not FormData)
         const videoExt = file.name.split(".").pop() || "mp4";
         const audioExt = "wav";
+        // Generate a shared ID for all files from the same upload
+        // Using timestamp + random string for cross-browser compatibility
+        const uploadId = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
 
         const videoKey = await uploadToQiniu(
           file,
           "video",
           videoExt,
-          (pct) => updateState("uploading-video", pct, "Uploading video...")
+          (pct) => updateState("uploading-video", pct, "Uploading video..."),
+          file.name,
+          uploadId
         );
 
         updateState("uploading-audio", 0, "Uploading audio to storage...");
@@ -111,11 +134,33 @@ export default function VideoUploader({
           audioBlob,
           "audio",
           audioExt,
-          (pct) => updateState("uploading-audio", pct, "Uploading audio...")
+          (pct) => updateState("uploading-audio", pct, "Uploading audio..."),
+          file.name,
+          uploadId
+        );
+
+        // Phase 3: Upload cover image
+        updateState("uploading-audio", 0, "Uploading cover image...");
+        const coverKey = await uploadToQiniu(
+          coverBlob,
+          "cover",
+          "png",
+          (pct) => updateState("uploading-audio", pct, "Uploading cover..."),
+          file.name,
+          uploadId
         );
 
         // Phase 4: Create transcript record on server
         updateState("creating-record", 0, "Starting transcription...");
+
+        console.log("[VideoUploader] Uploading to transcript API:", {
+          filename: file.name,
+          fileSize: file.size,
+          mimeType: file.type || "video/mp4",
+          videoKey,
+          audioKey,
+          coverKey,
+        });
 
         const res = await fetch("/api/video-transcript/upload", {
           method: "POST",
@@ -126,6 +171,7 @@ export default function VideoUploader({
             mimeType: file.type || "video/mp4",
             videoKey,
             audioKey,
+            coverKey,
           }),
         });
 
@@ -147,7 +193,7 @@ export default function VideoUploader({
         setError(msg);
         updateState("error", 0, msg);
         onUploadError?.(msg);
-        setTimeout(resetState, 4000);
+        // 移除自动清除逻辑，报错信息将保留在界面上
       }
     },
     [validateFile, updateState, resetState, onUploadComplete, onUploadError]
