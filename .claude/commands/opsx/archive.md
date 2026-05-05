@@ -1,7 +1,8 @@
 ---
-name: opsx-archive
+name: "OPSX: Archive"
 description: Archive a completed change in the experimental workflow
-invokable: true
+category: Workflow
+tags: [workflow, archive, experimental]
 ---
 
 Archive a completed change in the experimental workflow.
