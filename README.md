@@ -1,6 +1,6 @@
-# InsightAI Dashboard
+# InsightForge
 
-> A modern full-stack AI dashboard with RAG (Retrieval-Augmented Generation) chat, document management, and advanced analytics
+> AI 智能研究与专业报告生成平台。Multi-Agent 工作流自动化从网页搜索、文档检索、洞察提炼到结构化报告生成的全流程。
 
 [![Next.js](https://img.shields.io/badge/Next.js-16.2.3-black?style=flat&logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat&logo=typescript)](https://www.typescriptlang.org/)
@@ -9,13 +9,16 @@
 
 ## ✨ Features
 
-- **🤖 AI-Powered Chat**: RAG-based conversations with your documents using pgvector
-- **📁 Document Management**: Upload, process, and manage various file types (PDF, DOCX, TXT)
-- **📈 Advanced Analytics**: Visualize usage data with interactive charts and insights
-- **🔐 Secure Authentication**: Email/password authentication with NextAuth.js
-- **🎨 Modern UI**: Clean, responsive design built with shadcn/ui components
-- **⚡ Real-time Processing**: Background document processing with vector embeddings
-- **🐳 Docker Support**: Containerized development with PostgreSQL + pgvector
+- **📁 项目与知识库管理**：按项目组织文档，支持多知识库管理，报告关联到具体项目
+- **🤖 Multi-Agent 研究工作流**：Research → Retrieval → Analysis → Writing 四阶段自动化报告生成
+- **🌐 网页搜索与内容抓取**：基于 DuckDuckGo + Cheerio 的免费网页研究能力
+- **📊 智能报告生成**：基于模板的结构化报告输出，支持 Markdown/Word 导出，引用自动溯源
+- **🔐 企业级订阅管理**：Stripe 订阅体系，Free/Pro/Team 三档，按量计费与 Token 配额
+- **📈 用量统计**：Token 消耗、报告数量等使用记录与实时展示
+- **💬 RAG 对话**：保留经典文档问答，支持混合搜索与多轮对话
+- **🎨 现代 UI**：Clean, responsive design built with shadcn/ui components
+- **⚡ Real-time Processing**：SSE 流式状态推送，生成进度实时可见
+- **🐳 Docker Support**：Containerized development with PostgreSQL + pgvector
 
 ## 🚀 Quick Start
 
@@ -46,16 +49,22 @@ Edit `.env.local` with your credentials:
 # Database (use Docker or external)
 DATABASE_URL="postgresql://postgres:postgres@localhost:5432/insightai"
 
-# AI Provider (OpenAI or compatible)
-AI_API_KEY="your-openai-api-key"
-AI_BASE_URL="https://api.openai.com/v1"  # Optional for other providers
+# AI Provider (OpenAI or compatible, for RAG chat)
+OPENAI_COMPATIBLE_BASE_URL="https://dashscope.aliyuncs.com/compatible-mode/v1"
+OPENAI_COMPATIBLE_API_KEY="your-api-key-here"
+
+# OpenAI API (for Agent workflow - required for report generation)
+OPENAI_API_KEY="sk-your-openai-api-key-here"
+
+# Stripe Configuration (optional, for subscription management)
+STRIPE_SECRET_KEY="sk_test_..."
+STRIPE_WEBHOOK_SECRET="whsec_..."
+STRIPE_PRICE_ID_PRO="price_..."
+STRIPE_PRICE_ID_TEAM="price_..."
 
 # Authentication
 AUTH_SECRET="generate-with: openssl rand -base64 32"
 NEXTAUTH_URL="http://localhost:3000"
-
-# Optional: External database
-# DATABASE_URL="your-production-database-url"
 ```
 
 ### Start Development

@@ -5,6 +5,7 @@ import { buildSystemPrompt, buildAiMessages } from "@/lib/chat/prompt-builder";
 import { truncateMessages } from "@/lib/chat/message-window";
 import { chatModel } from "@/lib/ai";
 import { streamText } from "ai";
+import { usageService } from "@/lib/usage/usage-service";
 
 export const POST = withAuth(async (req, context) => {
   const { userId } = context;
@@ -69,8 +70,20 @@ export const POST = withAuth(async (req, context) => {
     onFinish: async (completion) => {
       try {
         await saveMessage(sessionId, "assistant", completion.text);
+
+        // Record chat usage
+        const totalTokens = completion.usage?.totalTokens || 0;
+        if (totalTokens > 0) {
+          await usageService.recordUsage({
+            userId,
+            type: "chat",
+            action: "chat",
+            tokensUsed: totalTokens,
+            metadata: { sessionId },
+          });
+        }
       } catch (error) {
-        console.error("Failed to save assistant response:", error);
+        console.error("Failed to save assistant response or record usage:", error);
       }
     },
   });

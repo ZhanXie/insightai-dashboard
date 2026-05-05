@@ -3,12 +3,21 @@
 import { useFormStatus } from "react-dom";
 import { signIn } from "next-auth/react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import Link from "next/link";
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Alert } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -23,8 +32,16 @@ function LoginFormInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get("callbackUrl") || "/dashboard";
+  const reason = searchParams.get("reason");
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [showSessionAlert, setShowSessionAlert] = useState(false);
+
+  useEffect(() => {
+    if (reason === "session_expired") {
+      setShowSessionAlert(true);
+    }
+  }, [reason]);
 
   const handleSubmit = async (formData: FormData) => {
     setError(null);
@@ -41,7 +58,7 @@ function LoginFormInner() {
       });
 
       if (result?.error) {
-        setError("Invalid email or password");
+        setError("邮箱或密码错误");
         setPending(false);
         return;
       }
@@ -49,7 +66,7 @@ function LoginFormInner() {
       router.push(callbackUrl);
       router.refresh();
     } catch {
-      setError("An error occurred. Please try again.");
+      setError("发生错误，请重试");
       setPending(false);
     }
   };
@@ -112,6 +129,25 @@ function LoginFormInner() {
           </p>
         </CardFooter>
       </Card>
+
+      <AlertDialog open={showSessionAlert} onOpenChange={setShowSessionAlert}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>会话已失效</AlertDialogTitle>
+            <AlertDialogDescription>
+              您的登录会话已过期或账户信息在数据库中不存在。这可能是由于系统更新或数据库维护导致。请重新登录以继续访问。
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogAction onClick={() => setShowSessionAlert(false)}>
+              我知道了
+            </AlertDialogAction>
+            <Button variant="outline" asChild>
+              <Link href="/register">注册新账户</Link>
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

@@ -1,5 +1,7 @@
 import { requireAuth } from "@/lib/auth-guard";
 import { redirect } from "next/navigation";
+import { prisma } from "@/lib/prisma";
+import { cookies } from "next/headers";
 import Link from "next/link";
 import LogoutButton from "@/components/LogoutButton";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
@@ -16,6 +18,23 @@ export default async function DashboardLayout({
     redirect("/login");
   }
   const session = guard.session;
+  const userId = session.user?.id;
+
+  // 验证用户是否存在于数据库中，防止外键约束报错 (P2003)
+  // 这种情况通常发生在数据库重置但浏览器缓存了旧 Session 时
+  if (userId) {
+    const userExists = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { id: true },
+    });
+    if (!userExists) {
+      // 主动清除无效会话 Cookie，强制打破 307 重定向循环
+      const cookieStore = await cookies();
+      cookieStore.delete("next-auth.session-token");
+      cookieStore.delete("__Secure-next-auth.session-token");
+      redirect("/login?reason=session_expired");
+    }
+  }
 
   return (
     <div className="flex h-screen flex-col bg-muted/30">
@@ -27,11 +46,17 @@ export default async function DashboardLayout({
               href="/dashboard"
               className="text-xl font-bold text-foreground"
             >
-              AI Dashboard
+              InsightForge
             </Link>
             <div className="flex gap-4">
               <NavigationLink href="/dashboard">
                 Overview
+              </NavigationLink>
+              <NavigationLink href="/dashboard/projects">
+                Projects
+              </NavigationLink>
+              <NavigationLink href="/dashboard/reports">
+                Reports
               </NavigationLink>
               <NavigationLink href="/dashboard/chat">
                 Chat
@@ -39,11 +64,8 @@ export default async function DashboardLayout({
               <NavigationLink href="/dashboard/documents">
                 Documents
               </NavigationLink>
-              <NavigationLink href="/dashboard/analytics">
-                Analytics
-              </NavigationLink>
-              <NavigationLink href="/dashboard/video-transcript">
-                Video
+              <NavigationLink href="/dashboard/settings">
+                Settings
               </NavigationLink>
             </div>
           </div>

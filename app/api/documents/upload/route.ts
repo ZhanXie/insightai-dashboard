@@ -12,6 +12,7 @@ export async function POST(request: Request) {
   return withAuth(async (req, { userId }) => {
     const formData = await req.formData();
     const file = formData.get("file") as File | null;
+    const projectId = formData.get("projectId") as string | null;
 
     if (!file) {
       throw new Error("No file provided");
@@ -48,7 +49,8 @@ export async function POST(request: Request) {
       file.name,
       file.size,
       mimeType,
-      "processing"
+      "processing",
+      projectId
     );
 
     try {

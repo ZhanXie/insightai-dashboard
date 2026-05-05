@@ -10,7 +10,8 @@ export async function createDocumentRecord(
   filename: string,
   fileSize: number,
   mimeType: string,
-  status: string = "pending"
+  status: string = "pending",
+  projectId?: string | null
 ) {
   return prisma.document.create({
     data: {
@@ -19,6 +20,7 @@ export async function createDocumentRecord(
       fileSize,
       mimeType,
       status,
+      ...(projectId ? { projectId } : {}),
     },
   });
 }
